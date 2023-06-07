@@ -1,5 +1,5 @@
-from bs4 import BeautifulSoup 
-import requests 
+from bs4 import BeautifulSoup
+import requests
 import time
 
 
@@ -26,7 +26,6 @@ with open("Recetas_links.txt","w") as f:
         # clase que contiene cada receta en particular, busco todas las clases de la pagina
         recetas=soup_recetas.find_all("a", class_="comp mntl-card-list-items mntl-document-card mntl-card card card--no-image")
         
-
         for receta in recetas:
 
             # clase que contiene el nombre y link a la info de cada receta en particular 

@@ -27,11 +27,6 @@ with open("Recetas_links.txt","w") as f:
         recetas=soup_recetas.find_all("a", class_="comp mntl-card-list-items mntl-document-card mntl-card card card--no-image")
         
         for receta in recetas:
-
-            # clase que contiene el nombre y link a la info de cada receta en particular 
-            recipe_card=receta.find("div", class_="card__content")
-            # nobre de la receta
-            recipe_name=recipe_card.span.span.text
             # link de la receta
             recipe_link=receta["href"]
 
@@ -45,24 +40,7 @@ with open("Recetas_links.txt","w") as f:
 
 
 
-            ### De aca para abajo se empieza a extraer info de cada receta ###
-
-
-            # pagina de la receta
-
-            #html_recipe_info=requests.get(recipe_link).text
-
-            #soup_info_receta=BeautifulSoup(html_recipe_info,"lxml")
-
-            #rating=soup_info_receta.find("div", id="mntl-recipe-review-bar__rating_1-0")
-
-            #all_times_info=soup_info_receta.find_all("div",class_="mntl-recipe-details__item")
-
-            #for info in all_times_info:
-            #    label = info.find("div",class_="mntl-recipe-details__label").text
-            #    if label=="Total Time:":
-            #        Total_time= info.find("div",class_="mntl-recipe-details__value").text
-            #        break
+           
 
 
             

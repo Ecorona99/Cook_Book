@@ -2,7 +2,8 @@ from bs4 import BeautifulSoup
 import requests
 
 def main():
-    allrecipes_to_txt()
+    # allrecipes_to_txt()
+    recipes_info()
 
 def allrecipes_to_txt():
     # Página donde aparecen los diferentes tipos de recetas, organizadas alfabéticamente.
@@ -36,6 +37,39 @@ def allrecipes_to_txt():
         for link in link_set:
             f.write(f"{link}\n")
 
+def recipes_info():
+    
+    file = open("Recetas_links.txt", "r")
+    
+    errors_file = open("Bad_links.txt", "w")
+
+    for line in file.readlines():
+        try:
+            recipe_link = line.strip()
+
+            html_recipe_info = requests.get(recipe_link).text
+
+            soup_recipe_info = BeautifulSoup(html_recipe_info, "lxml")
+            
+            recipe_name = soup_recipe_info.find("h1", class_ = "comp type--lion article-heading mntl-text-block").text
+
+            rating = soup_recipe_info.find("div", id = "mntl-recipe-review-bar__rating_1-0").text
+
+            all_times_info = soup_recipe_info.find_all("div", class_ = "mntl-recipe-details__item")
+
+            for info in all_times_info:
+                label = info.find("div", class_ = "mntl-recipe-details__label").text
+                if label== "Total Time:":
+                    Total_time = info.find("div", class_ = "mntl-recipe-details__value").text
+                    break
+
+            print(recipe_name.strip())
+            print(rating)
+            print(Total_time)
+        
+        except:
+            errors_file.write(line)
+            continue
 
 if __name__ == '__main__':
     main()

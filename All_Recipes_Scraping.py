@@ -2,7 +2,7 @@ from bs4 import BeautifulSoup
 import requests
 
 def main():
-    # allrecipes_to_txt()
+    allrecipes_to_txt()
     recipes_info()
 
 def allrecipes_to_txt():

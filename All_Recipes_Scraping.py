@@ -1,8 +1,11 @@
 from bs4 import BeautifulSoup
 import requests
+from selenium import webdriver
+from selenium.common.exceptions import NoSuchElementException
+from selenium.webdriver.common.by import By
 
 def main():
-    allrecipes_to_txt()
+    #allrecipes_to_txt()
     recipes_info()
 
 def allrecipes_to_txt():
@@ -43,11 +46,31 @@ def recipes_info():
     
     errors_file = open("Bad_links.txt", "w")
 
-    for line in file.readlines():
-        try:
-            recipe_link = line.strip()
+     # Crea una instancia del navegador
+    driver = webdriver.Firefox()
 
-            html_recipe_info = requests.get(recipe_link).text
+    for line in file.readlines():
+        
+        recipe_link = line.strip()
+
+        # Accede a la página
+        driver.get(line)
+
+        try:
+            
+            try:
+                
+                boton = driver.find_element(By.CLASS_NAME,"feedback-list__load-more-button")
+                
+                boton.click()
+                # Espera a que se cargue el contenido
+                driver.implicitly_wait(20)
+
+            except NoSuchElementException:
+                pass
+            
+            html_recipe_info = driver.page_source
+            #html_recipe_info = requests.get(recipe_link).text
 
             soup_recipe_info = BeautifulSoup(html_recipe_info, "lxml")
             
@@ -63,13 +86,24 @@ def recipes_info():
                     Total_time = info.find("div", class_ = "mntl-recipe-details__value").text
                     break
 
+            ingredients_tags=soup_recipe_info.find_all("span", attrs={"data-ingredient-name":"true"} )
+            
+            ingredients_list=[x.text for x in ingredients_tags]
+          
+            
+
+
             print(recipe_name.strip())
-            print(rating)
-            print(Total_time)
-        
+            print(rating.strip())
+            print(Total_time.strip())
+            print(ingredients_list)
         except:
             errors_file.write(line)
             continue
 
+        driver.quit()
+
 if __name__ == '__main__':
     main()
+
+main()

@@ -41,92 +41,85 @@ def allrecipes_to_txt():
         for link in link_set:
             f.write(f"{link}\n")
 
-
 def recipes_info():
     
     f = open("Recetas_links.txt", "r")
     
     errors_file = open("Bad_links.txt", "w")
 
-        # Crea una instancia del navegador
-    driver = webdriver.Firefox()
+    # Crea una instancia del navegador por defecto.
+    driver = webdriver.Chrome()
 
     for line in f.readlines():
         
         recipe_link = line.strip()
 
-        # Accede a la página
+        # Accede a la página.
         driver.get(recipe_link)
-        #Se espera para que se carguen todos los elemntos de la pagina
-        #IMPORTANTE, depende de la velocidad de internet, pero aumentr mucho la espera demorara la ejecucion del 
-        #programa
+
+        # Se espera para que se carguen todos los elementos de la página.
+        #! Depende de la velocidad de internet, pero aumenta mucho la espera y demora la ejecución del programa.
         driver.implicitly_wait(10)
+        
+        # Manejo de excepciones imprevistas quedarán anotadas las recetas que las provoquen en un txt.
         try:
-            
-            # Manejo de excepciones en caso de que no exista boton en una pagina
+            # Manejo de excepciones en caso de que no exista botón de más comentarios en una página.
             try:
-                
-                boton = driver.find_element(By.CLASS_NAME,"feedback-list__load-more-button")
-                
-                # Si es posible se presiona el boton "count" veces
-                count=2
-                while (count>0):
-                    boton.click()
-                    # Espera a que se cargue el contenido
-                    driver.implicitly_wait(20)
-                    count-=1
-                
+                button = driver.find_element(By.CLASS_NAME, "feedback-list__load-more-button")
+                # Si es posible se presiona el botón determinadas veces.
+                for i in range(3):
+                    button.click()
+                    # Espera a que se cargue el contenido.
+                    driver.implicitly_wait(20)    
             except NoSuchElementException:
                 pass
             
-            # Se carga el contenido del html
+            # Se carga el contenido del html. #¿Faltan paréntesis?
             html_recipe_info = driver.page_source
-            #html_recipe_info = requests.get(recipe_link).text
+            #//html_recipe_info = requests.get(recipe_link).text
 
             soup_recipe_info = BeautifulSoup(html_recipe_info, "lxml")
             
             recipe_name = soup_recipe_info.find("h1", class_ = "comp type--lion article-heading mntl-text-block").text
 
             rating = soup_recipe_info.find("div", id = "mntl-recipe-review-bar__rating_1-0").text
-            
-            # Tab que contiene la info de tiempos de preparacion
+
+            # Tab que contiene la info de tiempos de preparación.
             all_times_info = soup_recipe_info.find_all("div", class_ = "mntl-recipe-details__item")
             
-            # Solo es de interes el tiempo total de preparacion
+            # Solo es de interés el tiempo total de preparación.
             for info in all_times_info:
                 label = info.find("div", class_ = "mntl-recipe-details__label").text
-                if label== "Total Time:":
-                    Total_time = info.find("div", class_ = "mntl-recipe-details__value").text
-                    break
+                if label == "Total Time:":
+                    total_time = info.find("div", class_ = "mntl-recipe-details__value").text
+                    break            
             
-            ingredients_tags=soup_recipe_info.find_all("span", attrs={"data-ingredient-name":"true"} )
+            ingredients_tags = soup_recipe_info.find_all("span", attrs = {"data-ingredient-name": "true"})
             
-            ingredients_list=[x.text for x in ingredients_tags]
+            ingredients_list = [x.text for x in ingredients_tags]
             
             print(recipe_name.strip())
             print(rating.strip())
-            print(Total_time.strip())
+            print(total_time.strip())
             print(ingredients_list)
 
-            feedback_list_tags=soup_recipe_info.find_all("div", class_="feedback__text")
+            feedback_list_tags = soup_recipe_info.find_all("div", class_ = "feedback__text")
 
-            if len(feedback_list_tags)>0:
+            if len(feedback_list_tags) > 0:
 
-                feedback_list=[x.p.text for x in feedback_list_tags]
+                feedback_list = [x.p.text for x in feedback_list_tags]
                 
-                # Se guardan los comentarios, separados por 2 lineas en blanco
+                # Se guardan los comentarios, separados por 2 lineas en blanco.
                 with open("Feedbacks.txt", "w") as f:
                     for comment in feedback_list:
                         f.write(f"{comment}\n\n")
-                        print(comment+"\n\n")
-              
+                        print(comment + "\n\n")  
         except:
             errors_file.write(line)
             continue
-
     driver.quit()
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()
 
 main()

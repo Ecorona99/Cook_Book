@@ -3,6 +3,7 @@ import requests
 from selenium import webdriver
 from selenium.common.exceptions import NoSuchElementException
 from selenium.webdriver.common.by import By
+import time
 
 def main():
     
@@ -44,14 +45,19 @@ def allrecipes_to_txt():
 def recipes_info():
     
     f = open("Recetas_links.txt", "r")
-    
-    errors_file = open("Bad_links.txt", "w")
 
     # Crea una instancia del navegador por defecto.
-    driver = webdriver.Chrome()
+    driver = webdriver.Firefox()
+    time.sleep(5)
+
+    count = 0
 
     for line in f.readlines():
-        
+
+        count += 1
+        if count == 5:
+            break
+
         recipe_link = line.strip()
 
         # Accede a la página.
@@ -59,31 +65,34 @@ def recipes_info():
 
         # Se espera para que se carguen todos los elementos de la página.
         #! Depende de la velocidad de internet, pero aumenta mucho la espera y demora la ejecución del programa.
-        driver.implicitly_wait(10)
+
+        time.sleep(10)
         
         # Manejo de excepciones imprevistas quedarán anotadas las recetas que las provoquen en un txt.
         try:
-            # Manejo de excepciones en caso de que no exista botón de más comentarios en una página.
-            try:
-                button = driver.find_element(By.CLASS_NAME, "feedback-list__load-more-button")
-                # Si es posible se presiona el botón determinadas veces.
-                for i in range(3):
-                    button.click()
-                    # Espera a que se cargue el contenido.
-                    driver.implicitly_wait(20)    
-            except NoSuchElementException:
-                pass
-            
-            # Se carga el contenido del html. #¿Faltan paréntesis?
+            """
+            #//    # Manejo de excepciones en caso de que no exista botón de más comentarios en una página.
+            #//    try:
+            #//        button = driver.find_element(By.CLASS_NAME, "feedback-list__load-more-button")
+            #//        # Si es posible se presiona el botón determinadas veces.
+            #//        for i in range(1):
+            #//            button.click()
+            #//            # Espera a que se cargue el contenido.
+            #//            # driver.implicitly_wait(20) 
+            #//            time.sleep(5)   
+            #//    except NoSuchElementException:
+            #//        pass
+            """            
+            # Se carga el contenido del html.
             html_recipe_info = driver.page_source
-            #//html_recipe_info = requests.get(recipe_link).text
 
             soup_recipe_info = BeautifulSoup(html_recipe_info, "lxml")
             
             recipe_name = soup_recipe_info.find("h1", class_ = "comp type--lion article-heading mntl-text-block").text
-
-            rating = soup_recipe_info.find("div", id = "mntl-recipe-review-bar__rating_1-0").text
-
+            try:
+                rating = soup_recipe_info.find("div", id = "mntl-recipe-review-bar__rating_1-0").text
+            except:
+                rating = "0.0"
             # Tab que contiene la info de tiempos de preparación.
             all_times_info = soup_recipe_info.find_all("div", class_ = "mntl-recipe-details__item")
             
@@ -103,6 +112,23 @@ def recipes_info():
             print(total_time.strip())
             print(ingredients_list)
 
+            with open("Ingredients.txt", "a") as f_ing:
+                for ingredient in ingredients_list:
+                    f_ing.write(ingredient)
+                    f_ing.write("\n")
+
+            nutrition_facts = {}
+
+            table_nutrition = soup_recipe_info.find_all("tr", class_ = "mntl-nutrition-facts-summary__table-row")
+            for row in table_nutrition:
+                try:
+                    key = row.find("td", class_ = "mntl-nutrition-facts-summary__table-cell type--dogg").text
+                except:
+                    key = row.find("td", class_ = "mntl-nutrition-facts-summary__table-cell type--dog").text
+                    
+                value = row.find("td", class_ = "mntl-nutrition-facts-summary__table-cell type--dog-bold").text
+                nutrition_facts.update({key:value})
+
             feedback_list_tags = soup_recipe_info.find_all("div", class_ = "feedback__text")
 
             if len(feedback_list_tags) > 0:
@@ -110,16 +136,19 @@ def recipes_info():
                 feedback_list = [x.p.text for x in feedback_list_tags]
                 
                 # Se guardan los comentarios, separados por 2 lineas en blanco.
-                with open("Feedbacks.txt", "w") as f:
+                with open("Feedbacks.txt", "w") as f_feed:
                     for comment in feedback_list:
-                        f.write(f"{comment}\n\n")
+                        f_feed.write(f"{comment}\n\n")
                         print(comment + "\n\n")  
-        except:
-            errors_file.write(line)
+
+        except KeyError as e:
+            with open("Bad_links.txt", "w") as errors:
+                errors.write(recipe_link + "\n")
+                errors.write(str(e))
             continue
+
+    f.close()
     driver.quit()
 
 if __name__ == "__main__":
     main()
-
-main()

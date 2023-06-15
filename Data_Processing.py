@@ -2,20 +2,23 @@ import pandas as pd
 import nltk
 from nltk.corpus import stopwords
 from nltk.stem import WordNetLemmatizer
+import re
 
 #* El set de datos no se subirá remotamente debido a su tamaño
 def main():
-    df = pd.read_parquet("recipes.parquet")
+    df_recipes = pd.read_parquet("recipes.parquet")
+    #df_reviews = pd.read_parquet("reviews.parquet")
 
-    # esquema = df.dtypes
+    # esquema = df_recipes.dtypes
     # print(esquema)
-
-    for n, recipe in df.iterrows():
+    all_ingredients = set()
+    for n, recipe in df_recipes.iterrows():
         ingredients = get_ingredients(recipe)
-        print(ingredients)
-        if n == 10:
-            break
+        all_ingredients.update(ingredients)
+    print(all_ingredients)
+    print(len(all_ingredients))
     print("")
+
 
 def get_ingredients(recipe):
     ingredients = set()

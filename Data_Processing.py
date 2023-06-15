@@ -7,9 +7,9 @@ import re
 #* El set de datos no se subirá remotamente debido a su tamaño
 def main():
     df_recipes = pd.read_parquet("recipes.parquet")
-    #df_reviews = pd.read_parquet("reviews.parquet")
+    df_reviews = pd.read_parquet("reviews.parquet")
 
-    # esquema = df_recipes.dtypes
+    # esquema = df.dtypes
     # print(esquema)
     all_ingredients = set()
     for n, recipe in df_recipes.iterrows():
@@ -19,6 +19,12 @@ def main():
     print(len(all_ingredients))
     print("")
 
+    for n, review in df_reviews.iterrows():
+        reemplazo = re.search(r"(.+\b(replace|substitute|swap)(?P<ingredient>(\s+\b\w+\b){0,5})\s+(\bwith\b|\bfor\b)(?P<sustitute>(\s+\b\w+\b){0,5})\b)",review["Review"])
+        if reemplazo:
+            print(review['Review'])
+            #for i in all_ingredients:
+                #related_ingredients.append(re.search(str(i)),review['Review'])
 
 def get_ingredients(recipe):
     ingredients = set()

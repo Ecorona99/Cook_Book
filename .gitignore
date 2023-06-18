@@ -1,4 +1,6 @@
 **/__pycache__
-**/geckodriver.log
 **/recipes.parquet
 **/reviews.parquet
+**/sustitutions.parquet
+**/ingredients.txt
+**/Ingredients.graphml

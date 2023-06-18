@@ -4,27 +4,36 @@ from nltk.corpus import stopwords
 from nltk.stem import WordNetLemmatizer
 import re
 
-#* El set de datos no se subirá remotamente debido a su tamaño
+#* El set de datos no se subirá remotamente debido a su tamaño.
 def main():
     df_recipes = pd.read_parquet("recipes.parquet")
-    df_reviews = pd.read_parquet("reviews.parquet")
+    #df_reviews = pd.read_parquet("reviews.parquet")
+    #df_sustitutions = pd.read_parquet("sustitutions.parquet")
+    #sustitution_reviews(df_reviews)
+    #get_all_ingredients(df_recipes)
 
-    # esquema = df.dtypes
-    # print(esquema)
+def sustitution_reviews(df_reviews):
+    df = pd.DataFrame()
+    for n, review in df_reviews.iterrows():
+        reemplazo = re.search(r"(.+\b(replace|change|substitute|swap)((\s+\b\w+\b){0,5})\s+(\bwith\b|\bfor\b|\binstead\b)((\s+\b\w+\b){0,5})\b)",review["Review"])
+        if reemplazo:
+            fila = df_reviews.iloc[n]
+            fila_df = fila.to_frame().T
+            df = pd.concat([df, fila_df], ignore_index=True)
+    df.to_parquet("sustitutions.parquet")
+
+def get_all_ingredients(df_recipes):
     all_ingredients = set()
+    
     for n, recipe in df_recipes.iterrows():
+        print(n)
         ingredients = get_ingredients(recipe)
         all_ingredients.update(ingredients)
-    print(all_ingredients)
+    
+    for i in all_ingredients:
+        with open("ingredients.txt", "a") as f:
+            f.write(i +"\n")
     print(len(all_ingredients))
-    print("")
-
-    for n, review in df_reviews.iterrows():
-        reemplazo = re.search(r"(.+\b(replace|substitute|swap)(?P<ingredient>(\s+\b\w+\b){0,5})\s+(\bwith\b|\bfor\b)(?P<sustitute>(\s+\b\w+\b){0,5})\b)",review["Review"])
-        if reemplazo:
-            print(review['Review'])
-            #for i in all_ingredients:
-                #related_ingredients.append(re.search(str(i)),review['Review'])
 
 def get_ingredients(recipe):
     ingredients = set()

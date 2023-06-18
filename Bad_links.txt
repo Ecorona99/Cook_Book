@@ -1,2 +1,0 @@
-https://www.allrecipes.com/recipe/276639/chicken-and-dumplings-from-scratch/
-'NoneType' object has no attribute 'text'

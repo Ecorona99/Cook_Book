@@ -2,6 +2,7 @@
 **/recipes.parquet
 **/reviews.parquet
 **/sustitutions.parquet
+**/cleaned_recipes.parquet
 **/ingredients.txt
 **/Ingredients.graphml
 **/Recipes.graphml

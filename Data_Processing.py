@@ -7,10 +7,27 @@ import re
 #* El set de datos no se subirá remotamente debido a su tamaño.
 def main():
     df_recipes = pd.read_parquet("recipes.parquet")
-    #df_reviews = pd.read_parquet("reviews.parquet")
-    #df_sustitutions = pd.read_parquet("sustitutions.parquet")
-    #sustitution_reviews(df_reviews)
-    #get_all_ingredients(df_recipes)
+    print(len(df_recipes.index))
+    #filter_recipes(df_recipes)
+    
+    df_cleaned_recipes = pd.read_parquet("cleaned_recipes.parquet")
+    print(len(df_cleaned_recipes.index))
+    pass
+
+def filter_recipes(df_recipes):
+    df = pd.DataFrame()
+    df = df_recipes
+    mask = df["RecipeIngredientParts"].apply(lambda x: len(x) == 0)
+    df = df.drop(df[mask].index)
+    selected_columns = ["RecipeId","Name","TotalTime","Description","RecipeCategory","Keywords",
+                        "RecipeIngredientParts","AggregatedRating","ReviewCount","Calories",
+                        "FatContent","SaturatedFatContent","CholesterolContent",
+                        "SodiumContent","CarbohydrateContent","FiberContent","SugarContent",
+                        "ProteinContent","RecipeServings","RecipeInstructions"]
+    df = df[selected_columns]
+    df = df.dropna(axis=0)
+    df = df.reset_index(drop=True)
+    df.to_parquet("cleaned_recipes.parquet")
 
 def sustitution_reviews(df_reviews):
     df = pd.DataFrame()

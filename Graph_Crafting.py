@@ -1,4 +1,5 @@
 import networkx as nx
+from networkx.algorithms.community.label_propagation import label_propagation_communities
 import pandas as pd
 from sklearn.preprocessing import MinMaxScaler
 from sklearn.neighbors import NearestNeighbors
@@ -27,7 +28,9 @@ class NutritionalRecommender:
 def main():
     #create_recipe_graph()
     #create_ingredients_graph()
-    calculate_ingredient_similarity()
+
+    df_recipes, recipe = calculate_PMI_neighbors(164136.0)
+    calculate_ingredient_similarity(df_recipes, recipe)
     #calculate_nutritional_similarity()
     pass
 
@@ -62,15 +65,45 @@ def create_ingredients_graph():
     nx.write_graphml(G, "Ingredients.graphml")
 
 
-def calculate_ingredient_similarity():
-    df_recipes = pd.read_parquet("cleaned_recipes.parquet")
+def calculate_ingredient_similarity(df_recipes, recipe):
     Ingredients_Graph = nx.read_graphml("Ingredients.graphml")
 
-    receta_indicada = df_recipes.iloc[0]
+    receta_indicada = recipe
     df_recipes["factor"] = df_recipes.apply(lambda x: shortest_path_factor(Ingredients_Graph, receta_indicada, x), axis = 1)
     print(df_recipes["factor"])
-    recipe_factor_max = df_recipes.sort_values("factor", ascending = True)
+    recipe_factor_max = df_recipes.sort_values("factor", ascending = False)
     print(recipe_factor_max[0:9])
+
+
+def calculate_PMI_neighbors(recipe_id):
+    df_recipes = pd.read_parquet("cleaned_recipes.parquet")
+    Ingredients_Graph = nx.read_graphml("Ingredients.graphml")
+    PMI_ingredients = set()
+
+    index = df_recipes.index[df_recipes['RecipeId'] == recipe_id]
+    recipe = df_recipes.iloc[index.argmax()]
+    print(index)
+    print(recipe)
+    ingredients = get_ingredients(recipe)
+    
+    for i in ingredients:
+        neighbors = Ingredients_Graph.neighbors(i)
+        PMI_ingredients.add(i)
+
+        max_PMI_neighbor = None
+        max_weight = 0
+        for neighbor in neighbors:
+            weight = Ingredients_Graph[i][neighbor]['weight']
+            if weight > max_weight:
+                max_PMI_neighbor = neighbor
+                max_weight = weight
+                PMI_ingredients.add(max_PMI_neighbor)
+    
+    df_recipes["Coincidences"] = df_recipes["RecipeIngredientParts"].apply(lambda x: score_recipe_ingredients(x, PMI_ingredients))
+    df_recipes = df_recipes.sort_values("Coincidences", ascending = False)
+    print(df_recipes.dtypes)
+    df_recipes = df_recipes.iloc[0:49]
+    return df_recipes, recipe
 
 
 def calculate_nutritional_similarity():
@@ -97,7 +130,15 @@ def calculate_PMI(Recipe_Graph, A_ingredient, B_ingredient, total):
     return PMI
 
 
-def shortest_path_factor(G, A_Recipe, B_Recipe) -> int:
+def score_recipe_ingredients(recipe_ingredients, ingredients) -> int:
+    score = 0
+    for i in ingredients:
+        if i in recipe_ingredients:
+            score += 1
+    return int(score)
+
+
+def shortest_path_factor(G, A_Recipe, B_Recipe) -> float:
     if A_Recipe["RecipeId"] != B_Recipe["RecipeId"]:
         A_ingredients = get_ingredients(A_Recipe)
         B_ingredients = get_ingredients(B_Recipe)

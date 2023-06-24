@@ -6,12 +6,17 @@ import re
 
 #* El set de datos no se subirá remotamente debido a su tamaño.
 def main():
-    df_recipes = pd.read_parquet("recipes.parquet")
-    print(len(df_recipes.index))
+    #df_recipes = pd.read_parquet("recipes.parquet")
     #filter_recipes(df_recipes)
     
     df_cleaned_recipes = pd.read_parquet("cleaned_recipes.parquet")
     print(len(df_cleaned_recipes.index))
+
+    #df_reviews = pd.read_parquet("reviews.parquet")
+    #filter_reviews(df_cleaned_recipes, df_reviews)
+
+    df_cleaned_reviews = pd.read_parquet("cleaned_reviews.parquet")
+    print(df_cleaned_reviews)
     pass
 
 def filter_recipes(df_recipes):
@@ -28,6 +33,13 @@ def filter_recipes(df_recipes):
     df = df.dropna(axis=0)
     df = df.reset_index(drop=True)
     df.to_parquet("cleaned_recipes.parquet")
+
+def filter_reviews(df_recipes, df_reviews):
+    df_reviews_filtrado = pd.merge(df_recipes[["RecipeId"]], df_reviews, on = "RecipeId", how = "inner")
+    df_reviews_filtrado = df_reviews_filtrado.reset_index(drop = True)
+    columns = ["RecipeId", "ReviewId", "AuthorId", "AuthorName", "Rating", "Review"]
+    df_reviews_filtrado = df_reviews_filtrado[columns]
+    df_reviews_filtrado.to_parquet("cleaned_reviews.parquet")
 
 def sustitution_reviews(df_reviews):
     df = pd.DataFrame()

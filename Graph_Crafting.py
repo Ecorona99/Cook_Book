@@ -1,8 +1,8 @@
 import networkx as nx
 from networkx.algorithms.community.label_propagation import label_propagation_communities
 import pandas as pd
-from sklearn.preprocessing import MinMaxScaler
-from sklearn.neighbors import NearestNeighbors
+#from sklearn.preprocessing import MinMaxScaler
+#from sklearn.neighbors import NearestNeighbors
 from Data_Processing import get_ingredients
 from math import log
 

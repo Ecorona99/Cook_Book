@@ -3,6 +3,7 @@
 **/reviews.parquet
 **/sustitutions.parquet
 **/cleaned_recipes.parquet
-**/ingredients.txt
+**/cleaned_reviews.parquet
 **/Ingredients.graphml
 **/Recipes.graphml
+**/Costumers.graphml

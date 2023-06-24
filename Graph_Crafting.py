@@ -29,9 +29,11 @@ def main():
     #create_recipe_graph()
     #create_ingredients_graph()
 
-    df_recipes, recipe = calculate_PMI_neighbors(164136.0)
-    calculate_ingredient_similarity(df_recipes, recipe)
+    #df_recipes, recipe = calculate_PMI_neighbors(164136.0)
+    #calculate_ingredient_similarity(df_recipes, recipe)
     #calculate_nutritional_similarity()
+
+    recipe_with_high_reviews()
     pass
 
 
@@ -158,6 +160,31 @@ def shortest_path_factor(G, A_Recipe, B_Recipe) -> float:
         factor = -1
         return factor
 
+
+def recipe_with_high_reviews():
+    df_recipes_all = pd.read_parquet("cleaned_recipes.parquet")
+    df_reviews = pd.read_parquet("cleaned_reviews.parquet")
+    G = nx.Graph()
+
+    df_recipes_all = df_recipes_all[df_recipes_all["ReviewCount"] > 10]
+    df_recipes_all["Reviewers"] = df_recipes_all["RecipeId"].apply(lambda x: reviewers_id(x, df_reviews))
+    print(df_recipes_all["Reviewers"])
+    for n, recipe in df_recipes_all.iterrows():
+        df_recipes = df_recipes_all.copy()
+        df_recipes["AuthorsMatch"] = df_recipes["Reviewers"].apply(lambda x: len(x.intersection(recipe["Reviewers"])) > 5)
+        df_recipes = df_recipes.loc[df_recipes["AuthorsMatch"] == True]
+        for m, match in df_recipes.iterrows():
+            if recipe["RecipeId"] != match["RecipeId"]:
+                G.add_edge(recipe["Name"], match["Name"])
+        if n > 1000:
+            break
+    nx.write_graphml(G, "Costumers.graphml")
+    
+    
+def reviewers_id(recipe_id, df_reviews):
+    df_reviews = df_reviews.loc[df_reviews["RecipeId"] == recipe_id]
+    authorsId = set(df_reviews["AuthorId"])
+    return authorsId
 
 if __name__ == "__main__":
     main()

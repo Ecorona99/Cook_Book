@@ -27,13 +27,13 @@ def search_recipe_by_name(df_recipes, input_recipe):
     output_frame.place(x=output_window_width/2, y=output_window_height/2)
     output_label.pack(pady = 5)
     results_list.pack(pady = 5)
-
     button_status.set("Search")
 
 # Main window
-window=tk.Tk()
+window=ttk.Window()
 window.title("Cook-book V1.0")
 window.geometry("640x400")
+window.resizable(0,0)
 window.update_idletasks()
 window_height=window.winfo_height()
 window_width=window.winfo_width()
@@ -52,15 +52,18 @@ input_recipe=ttk.StringVar()
 search_field=ttk.Entry(input_frame, textvariable = input_recipe,width=35)
 button_status=ttk.StringVar()
 button_status.set("Search")
-search_button=ttk.Button(input_frame, textvariable = button_status, command = lambda: search_recipe_by_name(df_recipes, search_field))
+search_button=ttk.Button(input_frame, 
+                        textvariable = button_status , 
+                        command = lambda: search_recipe_by_name(df_recipes, search_field))
+
 coincidences_frame=ttk.Frame(window,name="coincidences_frame")
 
 input_frame.place(x=window_width//2, y=window_height//5,anchor=tk.CENTER)
 input_label.pack(pady = 5)
-search_field.pack(pady = 10, side="left")
-search_button.pack(pady = 10,side = "right")
+search_field.pack(pady = 10, padx=3,side="left")
+search_button.pack(pady = 10, padx=3, side = "right")
 
-list = tk.Listbox(coincidences_frame, height = 6, width=50 , font = "Calibri 10 bold ", relief = 'flat',
+list = tk.Listbox(coincidences_frame, height = 10, width=45 , font = "Calibri 10 bold ", relief = 'flat',
                   bg = "SystemButtonFace" , highlightcolor = "SystemButtonFace")
 
 
@@ -70,7 +73,7 @@ def my_click(my_widget):
     value = window.get(index)
     input_recipe.set(value)
     list.delete(0,tk.END)
-    coincidences_frame.pack_forget()
+    coincidences_frame.place_forget()
 
 def my_down(my_widget):
     list.focus()
@@ -78,7 +81,7 @@ def my_down(my_widget):
 
 def get_data(*args):
       
-    coincidences_frame.pack(pady=10,side="bottom")
+    coincidences_frame.place(x=window_width//2, y=2*window_height//3,anchor=tk.CENTER)
     list.pack( pady=5)
 
     search_str = search_field.get() # user entered string

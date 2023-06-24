@@ -26,6 +26,7 @@ class NutritionalRecommender:
         return self.original_nutritional_df.iloc[closest_indices]
 
 def main():
+    create_reviewers_graph()
     pass
 
 
@@ -100,7 +101,6 @@ def create_reviewers_graph():
         for m, match in df_recipes.iterrows():
             if recipe["RecipeId"] != match["RecipeId"]:
                 G.add_edge(recipe["Name"], match["Name"])
-    
     nx.write_graphml(G, "Reviewers.graphml")
 
 

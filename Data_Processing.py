@@ -3,20 +3,22 @@ import nltk
 from nltk.corpus import stopwords
 from nltk.stem import WordNetLemmatizer
 import re
+from Graph_Crafting import score_recipe_ingredients
 
 #* El set de datos no se subirá remotamente debido a su tamaño.
 def main():
     #df_recipes = pd.read_parquet("recipes.parquet")
     #filter_recipes(df_recipes)
     
-    df_cleaned_recipes = pd.read_parquet("cleaned_recipes.parquet")
-    print(len(df_cleaned_recipes.index))
+    #df_cleaned_recipes = pd.read_parquet("cleaned_recipes.parquet")
+    #print(len(df_cleaned_recipes.index))
 
     #df_reviews = pd.read_parquet("reviews.parquet")
     #filter_reviews(df_cleaned_recipes, df_reviews)
 
     df_cleaned_reviews = pd.read_parquet("cleaned_reviews.parquet")
-    print(df_cleaned_reviews)
+    sustitution_reviews(df_cleaned_reviews)
+    #print(df_cleaned_reviews)
     pass
 
 def filter_recipes(df_recipes):
@@ -42,14 +44,9 @@ def filter_reviews(df_recipes, df_reviews):
     df_reviews_filtrado.to_parquet("cleaned_reviews.parquet")
 
 def sustitution_reviews(df_reviews):
-    df = pd.DataFrame()
-    for n, review in df_reviews.iterrows():
-        reemplazo = re.search(r"(.+\b(replace|change|substitute|swap)((\s+\b\w+\b){0,5})\s+(\bwith\b|\bfor\b|\binstead\b)((\s+\b\w+\b){0,5})\b)",review["Review"])
-        if reemplazo:
-            fila = df_reviews.iloc[n]
-            fila_df = fila.to_frame().T
-            df = pd.concat([df, fila_df], ignore_index=True)
-    df.to_parquet("sustitutions.parquet")
+    df_reviews["Found"] = df_reviews["Review"].apply(lambda x: re.search(r"(.+\b(replace|change|substitute|swap)((\s+\b\w+\b){0,5})\s+(\bwith\b|\bfor\b|\binstead\b)((\s+\b\w+\b){0,5})\b)", x) != None)
+    df_reviews = df_reviews.loc[df_reviews["Found"] == True]
+    df_reviews.to_parquet("sustitutions.parquet")
 
 def get_recipe_id(df_recipes, recipe_name):
     id_receta = df_recipes.loc[df_recipes["Name"] == recipe_name, "RecipeId"].values[0]
@@ -74,6 +71,14 @@ def get_ingredients(recipe):
         ingredients.add(ingredient)
     ingredients = clean(ingredients)
     return ingredients
+
+def get_recipe_by_ingredients(df_recipes, ingredients):
+    ingredients = ingredients.split(",").strip
+    ingredients = clean(ingredients)
+    df_recipes["Match"] = df_recipes["RecipeIngredientParts"].apply(lambda x: score_recipe_ingredients(clean(x), ingredients))
+    df_recipes = df_recipes.sort_values("Match", ascending = False)
+    recipe = df_recipes.iloc[0]
+    return recipe
 
 def clean(ingredients):
     tokenized = [nltk.word_tokenize(i.lower()) for i in ingredients]

@@ -82,10 +82,7 @@ def calculate_PMI_neighbors(recipe_id):
     Ingredients_Graph = nx.read_graphml("Ingredients.graphml")
     PMI_ingredients = set()
 
-    index = df_recipes.index[df_recipes['RecipeId'] == recipe_id]
-    recipe = df_recipes.iloc[index.argmax()]
-    print(index)
-    print(recipe)
+    recipe = df_recipes.loc[df_recipes['RecipeId'] == recipe_id].iloc[0]
     ingredients = get_ingredients(recipe)
     
     for i in ingredients:
@@ -103,7 +100,6 @@ def calculate_PMI_neighbors(recipe_id):
     
     df_recipes["Coincidences"] = df_recipes["RecipeIngredientParts"].apply(lambda x: score_recipe_ingredients(x, PMI_ingredients))
     df_recipes = df_recipes.sort_values("Coincidences", ascending = False)
-    print(df_recipes.dtypes)
     df_recipes = df_recipes.iloc[0:49]
     return df_recipes, recipe
 
@@ -179,7 +175,10 @@ def recipe_with_high_reviews():
         if n > 1000:
             break
     nx.write_graphml(G, "Costumers.graphml")
-    
+
+def get_recipe_id(df_recipes, recipe_name):
+    id_receta = df_recipes.loc[df_recipes["Name"] == recipe_name, "RecipeId"].values[0]
+    return id_receta
     
 def reviewers_id(recipe_id, df_reviews):
     df_reviews = df_reviews.loc[df_reviews["RecipeId"] == recipe_id]

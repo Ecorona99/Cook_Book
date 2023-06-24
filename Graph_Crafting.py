@@ -72,9 +72,10 @@ def calculate_ingredient_similarity(df_recipes, recipe):
 
     receta_indicada = recipe
     df_recipes["factor"] = df_recipes.apply(lambda x: shortest_path_factor(Ingredients_Graph, receta_indicada, x), axis = 1)
-    print(df_recipes["factor"])
+   # print(df_recipes["factor"])
     recipe_factor_max = df_recipes.sort_values("factor", ascending = False)
-    print(recipe_factor_max[0:9])
+   # print(recipe_factor_max[0:9])
+    return recipe_factor_max[0:9]
 
 
 def calculate_PMI_neighbors(recipe_id):

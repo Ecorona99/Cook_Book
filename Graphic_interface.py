@@ -12,7 +12,7 @@ def search_recipe_by_name():
     output_label=ttk.Label(output_frame,text="Mejores coincidencias: ", font="Calibri 20 bold")
     #aqui lo importante es que en value se guarde la lista de nombres de las recetas que estan en el df
     list_var=ttk.StringVar(value=df_recipes["nombre de la columna aqui"])
-    results_list=tk.Listbox(output_frame,height=10,width=25,listvariable=list_var)
+    results_list=tk.Listbox(output_frame,height=10,width=70,listvariable=list_var)
     output_frame.pack(pady=5)
     output_label.pack(pady=5)
     results_list.pack(pady=5)

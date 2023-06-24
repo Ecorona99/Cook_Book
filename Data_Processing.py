@@ -51,6 +51,10 @@ def sustitution_reviews(df_reviews):
             df = pd.concat([df, fila_df], ignore_index=True)
     df.to_parquet("sustitutions.parquet")
 
+def get_recipe_id(df_recipes, recipe_name):
+    id_receta = df_recipes.loc[df_recipes["Name"] == recipe_name, "RecipeId"].values[0]
+    return id_receta
+
 def get_all_ingredients(df_recipes):
     all_ingredients = set()
     
@@ -86,6 +90,11 @@ def clean(ingredients):
         trated_ingredients = " ".join(trated_ingredients)
         cleaned_ingredients.add(trated_ingredients)
     return cleaned_ingredients
+
+def get_reviewers_id(recipe_id, df_reviews):
+    df_reviews = df_reviews.loc[df_reviews["RecipeId"] == recipe_id]
+    authorsId = set(df_reviews["AuthorId"])
+    return authorsId
 
 if __name__ == "__main__":
     main()

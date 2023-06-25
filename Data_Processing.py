@@ -146,10 +146,11 @@ def get_recipe_by_ingredients_using_graph(ingredients):
     for ingredient in ingredients:
         recetas=set(G.predecessors(ingredient))
         if first_run==1:
-            result=recetas    
+            result=recetas
+            first_run=0    
         else:
             result=result & recetas
-        print(result)
+        
     return list(result)
 
 

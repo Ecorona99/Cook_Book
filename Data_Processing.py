@@ -131,12 +131,12 @@ def score_recipe_ingredients(recipe_ingredients, ingredients) -> int:
     return int(score)
 
 def get_recipe_by_ingredients(df_recipes, ingredients):
-    ingredients = ingredients.split(",").strip
+    ingredients = ingredients.split(",")
     ingredients = clean(ingredients)
     df_recipes["Match"] = df_recipes["RecipeIngredientParts"].apply(lambda x: score_recipe_ingredients(clean(x), ingredients))
     df_recipes = df_recipes.sort_values("Match", ascending = False)
-    recipe = df_recipes.iloc[0]
-    return recipe
+    recipes = df_recipes[0:9]
+    return recipes
 
 def clean(ingredients):
     tokenized = [nltk.word_tokenize(i.lower()) for i in ingredients]

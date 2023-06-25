@@ -4,10 +4,10 @@ import ttkbootstrap as ttk
 from PIL import Image, ImageTk
 import pandas as pd
 import re
-from Data_Processing import get_recipe_id, calculate_PMI_neighbors
+from Data_Processing import get_recipe_id, calculate_PMI_neighbors, get_recipe_by_ingredients
 
 df_recipes = pd.read_parquet("cleaned_recipes.parquet")
-names = df_recipes["Name"].to_list()
+
 
 def search_recipe_by_name(df_recipes, input_recipe):
 
@@ -15,6 +15,7 @@ def search_recipe_by_name(df_recipes, input_recipe):
     window.update()
 
     df_recipes, recipe = calculate_PMI_neighbors(df_recipes, get_recipe_id(df_recipes,input_recipe.get()))
+    names = df_recipes["Name"].to_list()
 
     output_window=ttk.Frame(notebook)
     notebook.add(output_window,text="Resultados de busqueda",sticky="nsew")
@@ -31,6 +32,30 @@ def search_recipe_by_name(df_recipes, input_recipe):
     output_label.pack(pady = 5,expand=True)
     results_list.pack(pady = 5,expand=True)
     button_status.set("Search")
+
+def search ():
+    button_status.set("Searching...")
+    window.update()
+    output_window=ttk.Frame(notebook)
+    notebook.add(output_window,text="Resultados de busqueda",sticky="nsew")
+    output_frame = ttk.Frame(output_window)
+    text_label=ttk.StringVar(value="")
+    output_label = ttk.Label(output_frame, textvariable=text_label , font = "Calibri 20 bold")
+    
+    if check_box_state.get()==1:
+        text_label.set("Mejores coincidencias por ingredientes: ")
+        results=get_recipe_by_ingredients(df_recipes,input_recipe.get())
+        names = results["Name"].to_list()
+        list_var = ttk.StringVar(value = names)
+        results_list = tk.Listbox(output_frame, height = 20, width = 70, listvariable = list_var)
+        close_tab=ttk.Button(output_frame,text="Close",command= lambda: notebook.forget(1))
+        output_frame.pack()
+        output_label.pack(pady=5)
+        results_list.pack(pady=15)
+        close_tab.pack(pady=5,side="bottom")
+
+
+
 
 
 def check_box_toggle():   
@@ -76,10 +101,10 @@ input_recipe = ttk.StringVar()
 search_field = ttk.Entry(input_frame, textvariable = input_recipe)
 button_status = ttk.StringVar()
 button_status.set("Search")
-search_button = ttk.Button(input_frame, textvariable = button_status, command = lambda: search_recipe_by_name(df_recipes, search_field))
+search_button = ttk.Button(input_frame, textvariable = button_status, command = search)
 # Check box frame
 check_box_frame=ttk.Frame(main_tab)
-check_box_label=ttk.Label(check_box_frame,text="Buscar por ingrediente",font="Calibri 10")
+check_box_label=ttk.Label(check_box_frame,text="Buscar por ingredientes",font="Calibri 10")
 check_box_state=ttk.IntVar()
 check_box=ttk.Checkbutton(check_box_frame,command=check_box_toggle,variable=check_box_state)
 # Coincidences frame
@@ -125,6 +150,7 @@ def get_data(*args):
 
     search_str = search_field.get() # user entered string
     list.delete(0, tk.END)
+    names = df_recipes["Name"].to_list()
     for name in names:
         if(re.match(search_str, name, re.IGNORECASE)):
             list.insert(tk.END, name)

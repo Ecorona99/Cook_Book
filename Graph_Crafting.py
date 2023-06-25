@@ -3,7 +3,7 @@ from networkx.algorithms.community.label_propagation import label_propagation_co
 import pandas as pd
 from sklearn.preprocessing import MinMaxScaler
 from sklearn.neighbors import NearestNeighbors
-from Data_Processing import get_ingredients, get_reviewers_id
+from Data_Processing import get_ingredients, get_reviewers_id, get_recipe_id
 from math import log
 
 class NutritionalRecommender:
@@ -26,7 +26,6 @@ class NutritionalRecommender:
         return self.original_nutritional_df.iloc[closest_indices]
 
 def main():
-    create_reviewers_graph()
     pass
 
 
@@ -155,6 +154,20 @@ def calculate_nutritional_similarity(df_recipes, recipe_id):
     recommender = NutritionalRecommender(nutritional_df, nutritional_data_columns)
     nutritional_sim_df = recommender.find_closest_recipes(recipe_id, k = 100)
     return nutritional_sim_df, recipe_id
+
+
+def calculate_reviewers_similarity(df_recipes, recipe_id):
+    G = nx.read_graphml("Reviewers.graphml")
+    df = pd.DataFrame()
+
+    recipe = df_recipes.loc[df_recipes['RecipeId'] == recipe_id].iloc[0]
+    neighbors = G.neighbors(recipe["Name"])
+    for neighbor in neighbors:
+        fila = df_recipes.loc[df_recipes["Name"] == str(neighbor)].iloc[0]
+        fila_df = fila.to_frame().T
+        df = pd.concat([df, fila_df], ignore_index=True)
+    return df, recipe_id
+
 
 
 def calculate_PMI(Recipe_Graph, A_ingredient, B_ingredient, total):

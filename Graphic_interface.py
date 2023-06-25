@@ -4,7 +4,7 @@ import ttkbootstrap as ttk
 from PIL import Image, ImageTk
 import pandas as pd
 import re
-from Data_Processing import get_recipe_id, calculate_PMI_neighbors, get_recipe_by_ingredients
+from Data_Processing import get_recipe_id, calculate_PMI_neighbors, get_recipe_by_ingredients_using_graph
 
 df_recipes = pd.read_parquet("cleaned_recipes.parquet")
 
@@ -34,25 +34,27 @@ def search_recipe_by_name(df_recipes, input_recipe):
     button_status.set("Search")
 
 def search ():
+    
     button_status.set("Searching...")
     window.update()
-    output_window=ttk.Frame(notebook)
-    notebook.add(output_window,text="Resultados de busqueda",sticky="nsew")
-    output_frame = ttk.Frame(output_window)
-    text_label=ttk.StringVar(value="")
-    output_label = ttk.Label(output_frame, textvariable=text_label , font = "Calibri 20 bold")
-    
+
     if check_box_state.get()==1:
-        text_label.set("Mejores coincidencias por ingredientes: ")
-        results=get_recipe_by_ingredients(df_recipes,input_recipe.get())
-        names = results["Name"].to_list()
-        list_var = ttk.StringVar(value = names)
+        notebook.add(output_window,text="Resultados de busqueda",sticky="nsew")
+        text_label2.set("Mejores coincidencias por ingredientes: ")
+        results=get_recipe_by_ingredients_using_graph(input_recipe.get())
+        list_var = ttk.StringVar(value = results)
         results_list = tk.Listbox(output_frame, height = 20, width = 70, listvariable = list_var)
+        results_list.bind("<<ListboxSelect>>", my_click_on_search_results)
         close_tab=ttk.Button(output_frame,text="Close",command= lambda: notebook.forget(1))
-        output_frame.pack()
-        output_label.pack(pady=5)
-        results_list.pack(pady=15)
+        output_frame.pack(expand=True,fill="both")
+        output_label.place(relx=0.5,rely=0.1,anchor=tk.CENTER)
+        results_list.place(relx=0.5,rely=0.5,anchor=tk.CENTER)
         close_tab.pack(pady=5,side="bottom")
+        output_frame.update()
+        output_frame.update_idletasks()
+        
+    else: 
+        get_recipe_info(df_recipes,recipe_name)
 
 
 
@@ -117,6 +119,12 @@ minutos=ttk.StringVar()
 horas_entry_field=ttk.Entry(time_frame,textvariable=horas,width=8)
 minutos_entry_field=ttk.Entry(time_frame,textvariable=minutos,width=8)
 
+# Frame de esultados de busqueda
+output_window=ttk.Frame(notebook)
+output_frame = ttk.Frame(output_window)
+text_label2=ttk.StringVar(value="")
+output_label = ttk.Label(output_frame, textvariable=text_label2 , font = "Calibri 18 bold")
+
 # Packin elements to frames
 input_frame.place(x = window_width // 2, y = window_height // 5, anchor = tk.CENTER)
 input_label.pack(pady = 5)
@@ -133,9 +141,14 @@ list = tk.Listbox(coincidences_frame, height = 15, width = 50 , font = "Calibri 
                   bg = "SystemButtonFace" , highlightcolor = "SystemButtonFace")
 
 
-        
+def my_click_on_search_results(my_widget):
+    window = my_widget.widget
+    index = int(window.curselection()[0])
+    value = window.get(index)
+    print(f"searching {value} info")
+            
 
-def my_click(my_widget):
+def my_click_on_coincidences_table(my_widget):
     window = my_widget.widget
     index = int(window.curselection()[0])
     value = window.get(index)
@@ -157,7 +170,7 @@ def get_data(*args):
 
 # Seguimiento de la entrada por el usuario
 input_recipe.trace("w", get_data)
-list.bind("<<ListboxSelect>>", my_click)
+list.bind("<<ListboxSelect>>", my_click_on_coincidences_table)
 
 def main():
     window.mainloop()

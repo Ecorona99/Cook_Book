@@ -138,6 +138,22 @@ def get_recipe_by_ingredients(df_recipes, ingredients):
     recipes = df_recipes[0:9]
     return recipes
 
+def get_recipe_by_ingredients_using_graph(ingredients):
+    G=nx.read_graphml("Recipes.graphml")
+    ingredients = ingredients.split(",")
+    ingredients = clean(ingredients)
+    first_run=1
+    for ingredient in ingredients:
+        recetas=set(G.predecessors(ingredient))
+        if first_run==1:
+            result=recetas    
+        else:
+            result=result & recetas
+        print(result)
+    return list(result)
+
+
+
 def clean(ingredients):
     tokenized = [nltk.word_tokenize(i.lower()) for i in ingredients]
 

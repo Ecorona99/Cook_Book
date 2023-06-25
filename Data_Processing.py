@@ -3,7 +3,7 @@ import nltk
 from nltk.corpus import stopwords
 from nltk.stem import WordNetLemmatizer
 import re
-from Graph_Crafting import score_recipe_ingredients
+import networkx as nx
 
 #* El set de datos no se subirá remotamente debido a su tamaño.
 def main():
@@ -71,6 +71,64 @@ def get_ingredients(recipe):
         ingredients.add(ingredient)
     ingredients = clean(ingredients)
     return ingredients
+
+def calculate_PMI_neighbors(df_recipes, recipe_id):
+    """
+    La función utiliza el grafo no dirigido que representa la relación entre los ingredientes de las recetas
+    para obtener el PMI entre los ingredientes de la receta dada y sus vecinos.
+    Luego, utiliza los ingredientes con mayor PMI para buscar recetas que tengan una mayor coincidencia de
+    ingredientes con la receta dada.
+
+    Args:
+    - df_recipes: DataFrame que contiene información sobre todas las recetas del conjunto de datos.
+    - recipe_id: El ID de la receta para la que se desea calcular la similitud.
+
+    Returns:
+    - df_recipes_PMI: Un DataFrame con las 50 recetas con mayor coincidencia de ingredientes.
+    - recipe_id: El ID de la receta para la que se desea calcular la similitud.
+    """
+    
+
+    Ingredients_Graph = nx.read_graphml("Ingredients.graphml")
+    PMI_ingredients = set()
+
+    recipe = df_recipes.loc[df_recipes['RecipeId'] == recipe_id].iloc[0]
+    ingredients = get_ingredients(recipe)
+    
+    for i in ingredients:
+        neighbors = Ingredients_Graph.neighbors(i)
+        PMI_ingredients.add(i)
+
+        max_PMI_neighbor = None
+        max_weight = 0
+        for neighbor in neighbors:
+            weight = Ingredients_Graph[i][neighbor]['weight']
+            if weight > max_weight:
+                max_PMI_neighbor = neighbor
+                max_weight = weight
+                PMI_ingredients.add(max_PMI_neighbor)
+    
+    df_recipes["Coincidences"] = df_recipes["RecipeIngredientParts"].apply(lambda x: score_recipe_ingredients(x, PMI_ingredients))
+    df_recipes_PMI = df_recipes.sort_values("Coincidences", ascending = False)
+    df_recipes_PMI = df_recipes_PMI.iloc[0:49]
+    return df_recipes_PMI, recipe_id
+
+def score_recipe_ingredients(recipe_ingredients, ingredients) -> int:
+    """
+    Calcula el puntaje de una receta basado en la cantidad de ingredientes en común entre la receta y una lista de ingredientes..
+
+    Args:
+    - recipe_ingredients: una lista de ingredientes de la receta que se desea puntuar.
+    - ingredients: una lista de ingredientes con los que se desea comparar la receta.
+
+    Returns:
+    - score: un número entero que indica la cantidad de ingredientes que la receta tiene en común con la lista de ingredientes.
+    """
+    score = 0
+    for i in ingredients:
+        if i in recipe_ingredients:
+            score += 1
+    return int(score)
 
 def get_recipe_by_ingredients(df_recipes, ingredients):
     ingredients = ingredients.split(",").strip

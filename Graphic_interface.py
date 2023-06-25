@@ -4,6 +4,7 @@ from PIL import Image, ImageTk
 import pandas as pd
 import re
 from Data_Processing import get_recipe_id, calculate_PMI_neighbors, get_recipe_by_ingredients_using_graph
+from networkx import NetworkXError
 
 df_recipes = pd.read_parquet("cleaned_recipes.parquet")
 
@@ -40,22 +41,26 @@ def search():
     window.update()
 
     if check_box_state.get() == 1:
-        notebook.add(output_window, text = "Resultados de busqueda", sticky = "nsew")
-        text_label2.set("Mejores coincidencias por ingredientes: ")
-        results = get_recipe_by_ingredients_using_graph(input_recipe.get())
-        list_var = ttk.StringVar(value = results)
-        results_list = tk.Listbox(output_frame, height = 20, width = 70, listvariable = list_var)
-        results_list.bind("<<ListboxSelect>>", my_click_on_search_results)
-        close_tab = ttk.Button(output_frame, text = "Close", command = lambda: notebook.forget(1))
-        output_frame.pack(expand = True, fill = "both")
-        output_label.place(relx = 0.5, rely = 0.1, anchor = tk.CENTER)
-        results_list.place(relx = 0.5, rely = 0.5, anchor = tk.CENTER)
-        close_tab.pack(pady = 5, side = "bottom")
-        output_frame.update()
-        output_frame.update_idletasks()
-    else:
+        try:
+            notebook.add(output_window, text = "Resultados de busqueda", sticky = "nsew")
+            text_label2.set("Mejores coincidencias por ingredientes: ")
+            results = get_recipe_by_ingredients_using_graph(input_recipe.get())
+            list_var = ttk.StringVar(value = results)
+            results_list = tk.Listbox(output_frame, height = 20, width = 70, listvariable = list_var)
+            results_list.bind("<<ListboxSelect>>", my_click_on_search_results)
+            output_frame.pack(expand = True, fill = "both")
+            output_label.place(relx = 0.5, rely = 0.1, anchor = tk.CENTER)
+            results_list.place(relx=0.5, rely = 0.5, anchor = tk.CENTER)
+            close_tab.pack(pady = 5, side = "bottom")
+            
+        except NetworkXError:
+            notebook.add(output_window, text = "Resultados de busqueda", sticky = "nsew")
+            text_label2.set("""Parece que no encontramos coincidencias,\n prueba otras combinaciones de ingredientes,\n o asegurate dehaber escrito correctamente los nombres.""") 
+            output_frame.place(relx = 0.5, rely = 0.5, anchor = tk.CENTER, relwidth = 0.8, relheight = 0.4)
+            output_label.pack(fill = "x")
+            close_tab.pack(pady = 5, side = "bottom")
+    else: 
         pass
-        
 
 ##########################################################################################################
 
@@ -123,8 +128,11 @@ minutos_entry_field = ttk.Entry(time_frame, textvariable = minutos, width = 8)
 # Frame de resultados de búsqueda
 output_window = ttk.Frame(notebook)
 output_frame = ttk.Frame(output_window)
+
 text_label2 = ttk.StringVar(value = "")
 output_label = ttk.Label(output_frame, textvariable = text_label2 , font = "Calibri 18 bold")
+close_tab=ttk.Button(output_frame,text="Close",command= lambda: notebook.forget(1))
+
 
 # Packing elements to frames
 input_frame.place(x = window_width // 2, y = window_height // 5, anchor = tk.CENTER)
@@ -204,6 +212,7 @@ def get_data(*args):
         for name in names:
             if(re.match(search_str, name, re.IGNORECASE)):
                 list.insert(tk.END, name)
+
 
 # Seguimiento de la entrada por el usuario
 input_recipe.trace("w", get_data)

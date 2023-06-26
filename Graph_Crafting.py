@@ -26,7 +26,8 @@ class NutritionalRecommender:
         return self.original_nutritional_df.iloc[closest_indices]
 
 def main():
-    create_sustitutions_graph()
+    df_recipes = pd.read_parquet("cleaned_recipes.parquet")
+    calculate_nutritional_similarity(df_recipes, 38.0)
     pass
 
 
@@ -179,7 +180,8 @@ def calculate_nutritional_similarity(df_recipes, recipe_id):
     nutritional_df.drop("RecipeServings", axis=1)
     recommender = NutritionalRecommender(nutritional_df, nutritional_data_columns)
     nutritional_sim_df = recommender.find_closest_recipes(recipe_id, k = 500)
-    return nutritional_sim_df, recipe_id
+    df_recipes = pd.merge(nutritional_sim_df[["RecipeId"]], df_recipes, on = "RecipeId", how = "inner")
+    return df_recipes, recipe_id
 
 
 def calculate_reviewers_similarity(df_recipes, recipe_id):

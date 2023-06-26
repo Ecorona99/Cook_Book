@@ -10,10 +10,7 @@ df_recipes = pd.read_parquet("cleaned_recipes.parquet")
 
 #####################################################################################################################
 
-def search_recipe_by_name(df_recipes, input_recipe):
-
-    button_status.set("Searching...")
-    window.update()
+def filtro_PMI(df_recipes, input_recipe):
 
     df_recipes, recipe = calculate_PMI_neighbors(df_recipes, get_recipe_id(df_recipes, input_recipe.get()))
     names = df_recipes["Name"].to_list()
@@ -163,6 +160,7 @@ def my_click_on_search_results(my_widget):
     recipe = df_recipes.loc[df_recipes["Name"] == value].iloc[0]
     add_info_tab(recipe)
 
+
 def add_info_tab(recipe):
     info_tab = ttk.Frame(notebook) 
     info_frame = ttk.Frame(info_tab)
@@ -208,12 +206,32 @@ def add_info_tab(recipe):
 
     ### Filter menu frame ###############################################################################
     label_menu=ttk.Label(filter_menu_frame, text="Buscar recetas similares usando:", font="Calibri 14 bold").place(relx=0,rely=0.1)
-    check_box_filtro_pmi=ttk.Checkbutton(filter_menu_frame,text="Filtro PMI").place(relx=0,rely=0.3)
-    check_box_filtro_nutricional=ttk.Checkbutton(filter_menu_frame,text="Filtro nutricional").place(relx=0.5,rely=0.3)
-    check_box_filtro_reviews=ttk.Checkbutton(filter_menu_frame,text="Filtro por reviews").place(relx=0,rely=0.5)
-    filter_button=ttk.Button(filter_menu_frame,text="Search",command=filters).place(relx=0.4,rely=0.9,anchor=tk.CENTER)
-         
 
+    check_box_filtro_pmi_status=ttk.IntVar()
+    check_box_filtro_nutricional_status=ttk.IntVar()
+    check_box_filtro_reviews_status=ttk.IntVar()
+    orden_filtros=set()
+
+    check_box_filtro_pmi=ttk.Checkbutton(
+        filter_menu_frame,
+        text="Filtro PMI",
+        variable=check_box_filtro_pmi_status).place(relx=0,rely=0.3)
+    check_box_filtro_nutricional=ttk.Checkbutton(
+        filter_menu_frame,
+        text="Filtro nutricional",
+        variable=check_box_filtro_nutricional_status).place(relx=0.5,rely=0.3)
+    check_box_filtro_reviews=ttk.Checkbutton(
+        filter_menu_frame,
+        text="Filtro por reviews",
+        variable=check_box_filtro_reviews_status)
+    if recipe["ReviewCount"]>=10:
+        check_box_filtro_reviews.place(relx=0,rely=0.5)
+    else:
+        note_label=ttk.Label(filter_menu_frame,text="**Filtro de reviews no disponible en recetas\ncon menos de 10 reseñas.",
+                            font="Calibri 8").place(relx=0,rely=0.5)
+   
+    filter_button=ttk.Button(filter_menu_frame,text="Search").place(relx=0.4,rely=0.9,anchor=tk.CENTER)
+         
 def my_click_on_coincidences_table(my_widget):
     window = my_widget.widget
     index = int(window.curselection()[0])

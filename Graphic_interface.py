@@ -3,7 +3,7 @@ import ttkbootstrap as ttk
 import pandas as pd
 import networkx as nx
 import re
-from Data_Processing import get_recipe_id, calculate_PMI_neighbors, get_recipe_by_ingredients_using_graph
+from Data_Processing import get_recipe_id, calculate_PMI_neighbors, get_recipe_by_ingredients_using_graph, get_ingredients
 from networkx import NetworkXError
 from Graph_Crafting import calculate_reviewers_similarity,calculate_nutritional_similarity,calculate_ingredient_similarity
 
@@ -27,7 +27,7 @@ def filtro(df_recipes, recipe_name, filter_output_frame, check_box_filtro_pmi_st
 
         sugerencias_var = ttk.StringVar(value = df_recipes["Name"].to_list())
         sugerencias_label = ttk.Label(filter_output_frame, text = "Te podrian gustar:", font = "Calibri 12").pack()
-        sugerencias_list = tk.Listbox(filter_output_frame, height = 10, width = 30, listvariable = sugerencias_var, font = "Calibri 12").pack(side=tk.RIGHT, anchor=tk.SE)
+        sugerencias_list = tk.Listbox(filter_output_frame, height = 10, width = 30, listvariable = sugerencias_var, font = "Calibri 12").pack()
     except:
         output_label = ttk.Label(filter_output_frame, text = "No se encontraron coincidencias", font = "Calibri 18 bold")
         filter_output_frame.place(relx = 0.5, rely = 0.5, anchor = tk.CENTER, relwidth = 0.8, relheight = 0.4)
@@ -79,15 +79,10 @@ def search():
 
 def check_box_toggle():
     if check_box_state.get() == 1:
-        time_frame.place(x = window_width // 2, y = check_box_frame.winfo_height() + check_box_frame.winfo_y() + 50, anchor = tk.CENTER)
-        time_label.pack(pady = 3, side = "top", expand = True, fill = "x")
-        horas_entry_field.pack(pady = 3, side = "left", expand = True)
-        minutos_entry_field.pack(pady = 3, side = "left", expand = True)
-        input_label_text.set("Buscar receta por sus ingredientes")
+        input_label_text.set("Buscar recetas por sus ingredientes:")
         coincidences_frame.pack_forget()
     else:
         input_label_text.set("Buscar receta por nombre:")
-        time_frame.place_forget()
         coincidences_frame.pack(pady = 10, side = "bottom")
        
 ##################################################################################################################### 
@@ -130,13 +125,7 @@ check_box_state = ttk.IntVar()
 check_box = ttk.Checkbutton(check_box_frame, command = check_box_toggle, variable = check_box_state)
 # Coincidences frame
 coincidences_frame = ttk.Frame(main_tab, name = "coincidences_frame")
-# Time Frame
-time_frame = ttk.Frame(main_tab)
-time_label = ttk.Label(time_frame, text = "Limitar tiempo de preparacion(hh/mm)", font = "Calibri 12 bold")
-horas = ttk.StringVar()
-minutos = ttk.StringVar()
-horas_entry_field = ttk.Entry(time_frame, textvariable = horas, width = 8)
-minutos_entry_field = ttk.Entry(time_frame, textvariable = minutos, width = 8)
+
 # Packing elements to main window frames
 input_frame.place(x = window_width // 2, y = window_height // 5, anchor = tk.CENTER)
 input_label.pack(pady = 5)
@@ -180,10 +169,12 @@ def add_info_tab(recipe):
     close_tab_button=ttk.Button(close_button_frame,text="CLOSE", command=close_current_tab).pack(pady=5)
 
     name_label = ttk.Label(info_frame, text = f"Nombre: {name}", font = "Calibri 14 bold").pack()
-    ingredients = recipe["RecipeIngredientParts"]
-    list_of_ingredients = ttk.StringVar(value = ingredients)
+    ingredients = get_ingredients(recipe)
+    ingredients_str = "\n".join(ingredients)
+    
+    list_of_ingredients = ttk.StringVar(value = ingredients_str)
     ingredients_label=ttk.Label(info_frame, text="Ingredientes:", font="Calibri 12").pack()
-    ingredients_list =tk.Listbox(info_frame, height = 10, width = 30, listvariable = list_of_ingredients,font="Calibri 12").pack()
+    ingredients_list =tk.Listbox(info_frame, height = 10, width = 30, listvariable = list_of_ingredients, font="Calibri 12").pack()
     #scrollbar = ttk.Scrollbar(info_frame,orient=tk.VERTICAL, command=ingredients_list.yview)
     #scrollbar.place(x=ingredients_list.winfo_x()+ingredients_list.winfo_width()+3, y=20, height=20)
     #ingredients_list.unbind("<<ListboxSelect>>",my_click_on_search_results)
@@ -233,7 +224,7 @@ def add_info_tab(recipe):
    
     filter_button=ttk.Button(filter_menu_frame,
                             text="Search",
-                            command = lambda: filtro(df_recipes,name,info_tab,check_box_filtro_pmi_status,check_box_filtro_nutricional_status,check_box_filtro_reviews_status)).place(relx=0.4,rely=0.9,anchor=tk.CENTER)
+                            command = lambda: filtro(df_recipes,name,filter_output_frame,check_box_filtro_pmi_status,check_box_filtro_nutricional_status,check_box_filtro_reviews_status)).place(relx=0.4,rely=0.9,anchor=tk.CENTER)
          
 def my_click_on_coincidences_table(my_widget):
     window = my_widget.widget

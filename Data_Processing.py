@@ -3,38 +3,23 @@ import nltk
 from nltk.corpus import stopwords
 from nltk.stem import WordNetLemmatizer
 import re
-import networkx as nx
 
 #* El set de datos no se subirá remotamente debido a su tamaño.
 def main():
-    #df_recipes = pd.read_parquet("recipes.parquet")
-    #filter_recipes(df_recipes)
-    
-    #df_cleaned_recipes = pd.read_parquet("cleaned_recipes.parquet")
-    #print(len(df_cleaned_recipes.index))
-
-    #df_reviews = pd.read_parquet("reviews.parquet")
-    #filter_reviews(df_cleaned_recipes, df_reviews)
-
-    df_cleaned_reviews = pd.read_parquet("cleaned_reviews.parquet")
-    sustitution_reviews(df_cleaned_reviews)
-    #print(df_cleaned_reviews)
     pass
 
 def filter_recipes(df_recipes):
-    df = pd.DataFrame()
-    df = df_recipes
-    mask = df["RecipeIngredientParts"].apply(lambda x: len(x) == 0)
-    df = df.drop(df[mask].index)
+    mask = df_recipes["RecipeIngredientParts"].apply(lambda x: len(x) == 0)
+    df_recipes = df_recipes.drop(df_recipes[mask].index)
     selected_columns = ["RecipeId","Name","TotalTime","Description","RecipeCategory","Keywords",
                         "RecipeIngredientParts","AggregatedRating","ReviewCount","Calories",
                         "FatContent","SaturatedFatContent","CholesterolContent",
                         "SodiumContent","CarbohydrateContent","FiberContent","SugarContent",
                         "ProteinContent","RecipeServings","RecipeInstructions"]
-    df = df[selected_columns]
-    df = df.dropna(axis=0)
-    df = df.reset_index(drop=True)
-    df.to_parquet("cleaned_recipes.parquet")
+    df_recipes = df_recipes[selected_columns]
+    df_recipes = df_recipes.dropna(axis=0)
+    df_recipes = df_recipes.reset_index(drop=True)
+    df_recipes.to_parquet("cleaned_recipes.parquet")
 
 def filter_reviews(df_recipes, df_reviews):
     df_reviews_filtrado = pd.merge(df_recipes[["RecipeId"]], df_reviews, on = "RecipeId", how = "inner")
@@ -59,24 +44,26 @@ def get_ingredients(recipe):
     ingredients = clean(ingredients)
     return ingredients
 
+def clean(ingredients):
+    tokenized = [nltk.word_tokenize(i.lower()) for i in ingredients]
+
+    stop_words = set(stopwords.words("english"))
+    stop_words.update(['.', ',', '"', "'", '?', '!', ':', ';', '(', ')', '[', ']', '{', '}'])
+    non_stop_tokens = [[w for w in i if not w in stop_words] for i in tokenized]
+
+    lemmatizer = WordNetLemmatizer()
+    lemmatizeds = [[lemmatizer.lemmatize(w) for w in i] for i in non_stop_tokens]
+
+    cleaned_ingredients = set()
+    for trated_ingredients in lemmatizeds:
+        trated_ingredients = " ".join(trated_ingredients)
+        cleaned_ingredients.add(trated_ingredients)
+    return cleaned_ingredients
+
 def calculate_PMI_neighbors(Ingredients_Graph, df_recipes, recipe_id):
-    """
-    La función utiliza el grafo no dirigido que representa la relación entre los ingredientes de las recetas
-    para obtener el PMI entre los ingredientes de la receta dada y sus vecinos.
-    Luego, utiliza los ingredientes con mayor PMI para buscar recetas que tengan una mayor coincidencia de
-    ingredientes con la receta dada.
-
-    Args:
-    - df_recipes: DataFrame que contiene información sobre todas las recetas del conjunto de datos.
-    - recipe_id: El ID de la receta para la que se desea calcular la similitud.
-
-    Returns:
-    - df_recipes_PMI: Un DataFrame con las 50 recetas con mayor coincidencia de ingredientes.
-    - recipe_id: El ID de la receta para la que se desea calcular la similitud.
-    """
-
     PMI_ingredients = set()
-
+    n = 4999
+    
     recipe = df_recipes.loc[df_recipes['RecipeId'] == recipe_id].iloc[0]
     ingredients = get_ingredients(recipe)
     
@@ -95,20 +82,10 @@ def calculate_PMI_neighbors(Ingredients_Graph, df_recipes, recipe_id):
     
     df_recipes["Coincidences"] = df_recipes["RecipeIngredientParts"].apply(lambda x: score_recipe_ingredients(x, PMI_ingredients))
     df_recipes_PMI = df_recipes.sort_values("Coincidences", ascending = False)
-    df_recipes_PMI = df_recipes_PMI.iloc[0:4999]
+    df_recipes_PMI = df_recipes_PMI.iloc[0:n]
     return df_recipes_PMI, recipe_id
 
 def score_recipe_ingredients(recipe_ingredients, ingredients) -> int:
-    """
-    Calcula el puntaje de una receta basado en la cantidad de ingredientes en común entre la receta y una lista de ingredientes..
-
-    Args:
-    - recipe_ingredients: una lista de ingredientes de la receta que se desea puntuar.
-    - ingredients: una lista de ingredientes con los que se desea comparar la receta.
-
-    Returns:
-    - score: un número entero que indica la cantidad de ingredientes que la receta tiene en común con la lista de ingredientes.
-    """
     score = 0
     for i in ingredients:
         if i in recipe_ingredients:
@@ -127,22 +104,6 @@ def get_recipe_by_ingredients_using_graph(Recipes_Graph, ingredients):
         else:
             result = result & recetas
     return list(result)
-
-def clean(ingredients):
-    tokenized = [nltk.word_tokenize(i.lower()) for i in ingredients]
-
-    stop_words = set(stopwords.words("english"))
-    stop_words.update(['.', ',', '"', "'", '?', '!', ':', ';', '(', ')', '[', ']', '{', '}'])
-    non_stop_tokens = [[w for w in i if not w in stop_words] for i in tokenized]
-
-    lemmatizer = WordNetLemmatizer()
-    lemmatizeds = [[lemmatizer.lemmatize(w) for w in i] for i in non_stop_tokens]
-
-    cleaned_ingredients = set()
-    for trated_ingredients in lemmatizeds:
-        trated_ingredients = " ".join(trated_ingredients)
-        cleaned_ingredients.add(trated_ingredients)
-    return cleaned_ingredients
 
 def get_reviewers_id(recipe_id, df_reviews):
     df_reviews = df_reviews.loc[df_reviews["RecipeId"] == recipe_id]

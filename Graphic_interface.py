@@ -36,14 +36,24 @@ def search_recipe_by_name(df_recipes, input_recipe):
 
 ######################################################################################################################
 
+def close_current_tab():
+    current_tab=notebook.select()
+    if current_tab:
+        notebook.forget(notebook.index(current_tab))
+
 def search():
     button_status.set("Searching...")
     window.update()
 
+    # Frame de resultados de búsqueda
+    output_window = ttk.Frame(notebook)
+    output_frame = ttk.Frame(output_window)
+    close_tab=ttk.Button(output_frame,text="Close",command= close_current_tab)
+
     if check_box_state.get() == 1:
         try:
             notebook.add(output_window, text = "Resultados de busqueda", sticky = "nsew")
-            text_label2.set("Mejores coincidencias por ingredientes: ")
+            output_label = ttk.Label(output_frame, text="Mejores coincidencias por ingredientes: ", font = "Calibri 18 bold")
             results = get_recipe_by_ingredients_using_graph(input_recipe.get())
             list_var = ttk.StringVar(value = results)
             results_list = tk.Listbox(output_frame, height = 20, width = 70, listvariable = list_var)
@@ -59,14 +69,18 @@ def search():
             output_frame.place(relx = 0.5, rely = 0.5, anchor = tk.CENTER, relwidth = 0.8, relheight = 0.4)
             output_label.pack(fill = "x")
             close_tab.pack(pady = 5, side = "bottom")
-    else: 
-        pass
+    else:
+        value=input_recipe.get() 
+        recipe = df_recipes.loc[df_recipes["Name"] == value].iloc[0]
+        add_info_tab(recipe)
+    button_status.set("Search")
+    window.update()
 
 ##########################################################################################################
 
 def check_box_toggle():
     if check_box_state.get() == 1:
-        time_frame.place(x = window_width // 2, y = check_box_frame.winfo_height() + check_box_frame.winfo_y() + 25, anchor = tk.CENTER)
+        time_frame.place(x = window_width // 2, y = check_box_frame.winfo_height() + check_box_frame.winfo_y() + 50, anchor = tk.CENTER)
         time_label.pack(pady = 3, side = "top", expand = True, fill = "x")
         horas_entry_field.pack(pady = 3, side = "left", expand = True)
         minutos_entry_field.pack(pady = 3, side = "left", expand = True)
@@ -124,17 +138,7 @@ horas = ttk.StringVar()
 minutos = ttk.StringVar()
 horas_entry_field = ttk.Entry(time_frame, textvariable = horas, width = 8)
 minutos_entry_field = ttk.Entry(time_frame, textvariable = minutos, width = 8)
-
-# Frame de resultados de búsqueda
-output_window = ttk.Frame(notebook)
-output_frame = ttk.Frame(output_window)
-
-text_label2 = ttk.StringVar(value = "")
-output_label = ttk.Label(output_frame, textvariable = text_label2 , font = "Calibri 18 bold")
-close_tab=ttk.Button(output_frame,text="Close",command= lambda: notebook.forget(1))
-
-
-# Packing elements to frames
+# Packing elements to main window frames
 input_frame.place(x = window_width // 2, y = window_height // 5, anchor = tk.CENTER)
 input_label.pack(pady = 5)
 search_field.pack(pady = 10, side = "left", expand = True, fill = "x")
@@ -146,52 +150,69 @@ check_box.pack(pady = 5)
 window.update()
 
 
+
 list = tk.Listbox(coincidences_frame, height = 15, width = 50 , font = "Calibri 10 bold", relief = 'flat',
                   bg = "SystemButtonFace" , highlightcolor = "SystemButtonFace")
+
+
 
 def my_click_on_search_results(my_widget):
     window = my_widget.widget
     index = int(window.curselection()[0])
     value = window.get(index)
     recipe = df_recipes.loc[df_recipes["Name"] == value].iloc[0]
-    info_tab = ttk.Frame(notebook)
-    notebook.add(info_tab, text = "Información")
+    add_info_tab(recipe)
+
+def add_info_tab(recipe):
+    info_tab = ttk.Frame(notebook) 
     info_frame = ttk.Frame(info_tab)
+    filter_menu_frame=ttk.Frame(info_tab)
+    filter_output_frame=ttk.Frame(info_tab)
+    close_button_frame=ttk.Frame(info_tab)
+
     name = recipe["Name"]
-    name_label = ttk.Label(info_frame, text = f"Nombre: {name}", font = "Calibri 12")
-    time = recipe["TotalTime"]
-    time_label = ttk.Label(info_frame, text = f"Tiempo de cocina: {time}", font = "Calibri 12")
+    ### Info frame ##############################################
+    notebook.add(info_tab, text=name)
+    info_frame.place(x=0, y=0, relwidth=0.6, relheight=0.9)
+    filter_menu_frame.place(relx=0.6, y=0, relwidth=0.4, relheight=0.3)
+    filter_output_frame.place(relx=0.6, rely=0.3, relwidth=0.4, relheight=0.6)
+    close_button_frame.place(x=0, rely=0.9, relwidth=1, relheight=0.1)
+    close_tab_button=ttk.Button(close_button_frame,text="CLOSE", command=close_current_tab).pack(pady=5)
+
+    name_label = ttk.Label(info_frame, text = f"Nombre: {name}", font = "Calibri 14 bold").pack()
     ingredients = recipe["RecipeIngredientParts"]
-    ingredients_label = ttk.Label(info_frame, text = f"Ingredientes: {ingredients}", font = "Calibri 12")
+    list_of_ingredients = ttk.StringVar(value = ingredients)
+    ingredients_label=ttk.Label(info_frame, text="Ingredientes:", font="Calibri 12")
+    ingredients_list =tk.Listbox(info_frame, height = 10, width = 30, listvariable = list_of_ingredients,font="Calibri 12").pack()
+    #scrollbar = ttk.Scrollbar(info_frame,orient=tk.VERTICAL, command=ingredients_list.yview)
+    #scrollbar.place(x=ingredients_list.winfo_x()+ingredients_list.winfo_width()+3, y=20, height=20)
+    #ingredients_list.unbind("<<ListboxSelect>>",my_click_on_search_results)
+    time = recipe["TotalTime"]
+    time_label = ttk.Label(info_frame, text = f"Tiempo de cocina: {time}", font = "Calibri 12").pack()
     rating = recipe["AggregatedRating"]
-    rating_label = ttk.Label(info_frame, text = f"Rating: {rating}", font = "Calibri 12")
+    rating_label = ttk.Label(info_frame, text = f"Rating: {rating}", font = "Calibri 12").pack()
     calories = recipe["Calories"]
-    calories_label = ttk.Label(info_frame, text = f"Calories: {calories}", font = "Calibri 12")
+    calories_label = ttk.Label(info_frame, text = f"Calories: {calories}", font = "Calibri 12").pack()
     fat = recipe["FatContent"]
-    fat_label = ttk.Label(info_frame, text = f"Fat: {fat}", font = "Calibri 12")
+    fat_label = ttk.Label(info_frame, text = f"Fat: {fat}", font = "Calibri 12").pack()
     cholesterol = recipe["CholesterolContent"]
-    cholesterol_label = ttk.Label(info_frame, text = f"Cholesterol: {cholesterol}", font = "Calibri 12")
+    cholesterol_label = ttk.Label(info_frame, text = f"Cholesterol: {cholesterol}", font = "Calibri 12").pack()
     carbohydrate = recipe["CarbohydrateContent"]
-    carbohydrate_label = ttk.Label(info_frame, text = f"Carbohydrate: {carbohydrate}", font = "Calibri 12")
+    carbohydrate_label = ttk.Label(info_frame, text = f"Carbohydrate: {carbohydrate}", font = "Calibri 12").pack()
     sugar = recipe["SugarContent"]
-    sugar_label = ttk.Label(info_frame, text = f"Sugar: {sugar}", font = "Calibri 12")
+    sugar_label = ttk.Label(info_frame, text = f"Sugar: {sugar}", font = "Calibri 12").pack()
     protein = recipe["ProteinContent"]
-    protein_label = ttk.Label(info_frame, text = f"Protein: {protein}", font = "Calibri 12")
+    protein_label = ttk.Label(info_frame, text = f"Protein: {protein}", font = "Calibri 12").pack()
     servings = recipe["RecipeServings"]
-    servings_label = ttk.Label(info_frame, text = f"Servicios: {servings}", font = "Calibri 12")
-    info_frame.place(x = window_width // 2, y = window_height // 5, anchor = tk.CENTER)
-    name_label.pack()
-    time_label.pack()
-    ingredients_label.pack()
-    rating_label.pack()
-    calories_label.pack()
-    fat_label.pack()
-    cholesterol_label.pack()
-    carbohydrate_label.pack()
-    sugar_label.pack()
-    protein_label.pack()
-    servings_label.pack()
-            
+    servings_label = ttk.Label(info_frame, text = f"Servicios: {servings}", font = "Calibri 12").pack()
+
+    ### Filter menu frame ###############################################################################
+    label_menu=ttk.Label(filter_menu_frame, text="Buscar recetas similares usando:", font="Calibri 14 bold").place(relx=0,rely=0.1)
+    check_box_filtro_pmi=ttk.Checkbutton(filter_menu_frame,text="Filtro PMI").place(relx=0,rely=0.3)
+    check_box_filtro_nutricional=ttk.Checkbutton(filter_menu_frame,text="Filtro nutricional").place(relx=0.5,rely=0.3)
+    check_box_filtro_reviews=ttk.Checkbutton(filter_menu_frame,text="Filtro por reviews").place(relx=0,rely=0.5)
+    filter_button=ttk.Button(filter_menu_frame,text="Search",command=filters).place(relx=0.4,rely=0.9,anchor=tk.CENTER)
+         
 
 def my_click_on_coincidences_table(my_widget):
     window = my_widget.widget

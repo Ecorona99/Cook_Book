@@ -62,7 +62,7 @@ def search():
             
         except NetworkXError:
             notebook.add(output_window, text = "Resultados de busqueda", sticky = "nsew")
-            text_label2.set("""Parece que no encontramos coincidencias,\n prueba otras combinaciones de ingredientes,\n o asegurate dehaber escrito correctamente los nombres.""") 
+            output_label = ttk.Label(output_frame, text="Parece que no encontramos coincidencias,\n prueba otras combinaciones de ingredientes,\n o asegurate dehaber escrito correctamente los nombres.", font = "Calibri 18 bold")
             output_frame.place(relx = 0.5, rely = 0.5, anchor = tk.CENTER, relwidth = 0.8, relheight = 0.4)
             output_label.pack(fill = "x")
             close_tab.pack(pady = 5, side = "bottom")

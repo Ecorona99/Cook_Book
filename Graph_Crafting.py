@@ -26,6 +26,7 @@ class NutritionalRecommender:
         return self.original_nutritional_df.iloc[closest_indices]
 
 def main():
+    create_sustitutions_graph()
     pass
 
 
@@ -103,6 +104,31 @@ def create_reviewers_graph():
     nx.write_graphml(G, "Reviewers.graphml")
 
 
+def create_sustitutions_graph():
+    G = nx.read_graphml("Ingredients.graphml")
+    sustitutions_graph = nx.Graph()
+    df_sustitutions = pd.read_parquet("sustitutions.parquet")
+    ingredients = []
+    
+    for node in G.nodes():
+        ingredients.append(str(node))
+    
+    for _, review in df_sustitutions.iterrows():
+        matches = []
+        for i in ingredients:
+            if i in review["Review"]:
+                matches.append(i)
+        if len(matches) > 1:
+            for i in range(len(matches) - 1):
+                for j in range(i+1, len(matches)):
+                    if sustitutions_graph.has_edge(matches[i],matches[j]):
+                        w = sustitutions_graph[matches[i]][matches[j]]['weight']
+                        sustitutions_graph.add_edge(matches[i], matches[j], weight = w + 1)
+                    else:
+                        sustitutions_graph.add_edge(matches[i], matches[j], weight = 1)
+    nx.write_graphml(sustitutions_graph, "Sustitutions.graphml")
+
+
 def calculate_ingredient_similarity(df_recipes, recipe_id):
     """
     Calcula la similitud entre los ingredientes de una receta y todas las demás recetas en el conjunto de datos.
@@ -167,7 +193,6 @@ def calculate_reviewers_similarity(df_recipes, recipe_id):
         fila_df = fila.to_frame().T
         df = pd.concat([df, fila_df], ignore_index=True)
     return df, recipe_id
-
 
 
 def calculate_PMI(Recipe_Graph, A_ingredient, B_ingredient, total):

@@ -1,10 +1,11 @@
 import networkx as nx
-from networkx.algorithms.community.label_propagation import label_propagation_communities
+from networkx.algorithms.community import louvain_communities
 import pandas as pd
 from sklearn.preprocessing import MinMaxScaler
 from sklearn.neighbors import NearestNeighbors
 from Data_Processing import get_ingredients, get_reviewers_id, get_recipe_id
 from math import log
+import matplotlib.pyplot as plt
 
 class NutritionalRecommender:
     def __init__(self, nutritional_df, nutritional_data_columns):
@@ -22,12 +23,11 @@ class NutritionalRecommender:
         input_recipe = self.nutritional_df.loc[self.nutritional_df["RecipeId"] == recipe_id, self.nutritional_data_columns]
         distances, indices = self.knn.kneighbors(input_recipe, n_neighbors=k+1)
         
-        closest_indices = indices[0][1:]
+        closest_indices = indices[0][0:]
         return self.original_nutritional_df.iloc[closest_indices]
 
 def main():
-    df_recipes = pd.read_parquet("cleaned_recipes.parquet")
-    calculate_nutritional_similarity(df_recipes, 38.0)
+    clean_sustitutions_graph()
     pass
 
 
@@ -130,7 +130,27 @@ def create_sustitutions_graph():
     nx.write_graphml(sustitutions_graph, "Sustitutions.graphml")
 
 
-def calculate_ingredient_similarity(df_recipes, recipe_id):
+def clean_sustitutions_graph():
+    G = nx.read_graphml("Sustitutions.graphml")
+    # Se descartan las aristas con peso menor que 5 para ignorar los ingredientes que hayan podido ser mencionados juntos accidentalmente.
+    edges_to_remove = [(u, v) for u, v, d in G.edges(data = True) if d['weight'] < 5]
+    G.remove_edges_from(edges_to_remove)
+    # Los nodos aislados se eliminan
+    isolated_nodes = [n for n in G.nodes() if G.degree(n) == 0]
+    G.remove_nodes_from(isolated_nodes)
+    # Se aplica el algoritmo de Louvain para detección de comunidades.
+    # Este es un algoritmo de detección de comunidades que funciona en dos fases. 
+    # En la primera fase, se asigna cada nodo a su propia comunidad
+    # y en la segunda fase, se busca optimizar la modularidad del grafo mediante la combinación de comunidades
+    communities = list(louvain_communities(G))
+    for i,comm in enumerate(communities):
+        for node in G.nodes():
+            if node in comm:
+                nx.set_node_attributes(G, {node: {'color': i}})
+    nx.write_graphml(G, "Sustitutions_communities.graphml")
+
+
+def calculate_ingredient_similarity(Ingredients_Graph, df_recipes, recipe_id):
     """
     Calcula la similitud entre los ingredientes de una receta y todas las demás recetas en el conjunto de datos.
     La función utiliza el grafo no dirigido que representa la relación de distancias entre los ingredientes de
@@ -144,13 +164,11 @@ def calculate_ingredient_similarity(df_recipes, recipe_id):
     - recipe_factor_max: Las 10 recetas más similares a la receta especificada, con su factor de similitud añadido.
     """
 
-    Ingredients_Graph = nx.read_graphml("Ingredients.graphml")
-
     recipe = df_recipes.loc[df_recipes['RecipeId'] == recipe_id].iloc[0]
 
     df_recipes["factor"] = df_recipes.apply(lambda x: shortest_path_factor(Ingredients_Graph, recipe, x), axis = 1)
     recipe_factor_max = df_recipes.sort_values("factor", ascending = False)
-    return recipe_factor_max[0:9]
+    return recipe_factor_max.iloc[1:10], recipe_id
 
 
 def calculate_nutritional_similarity(df_recipes, recipe_id):
@@ -184,12 +202,11 @@ def calculate_nutritional_similarity(df_recipes, recipe_id):
     return df_recipes, recipe_id
 
 
-def calculate_reviewers_similarity(df_recipes, recipe_id):
-    G = nx.read_graphml("Reviewers.graphml")
+def calculate_reviewers_similarity(Reviewers_Graph, df_recipes, recipe_id):
     df = pd.DataFrame()
 
     recipe = df_recipes.loc[df_recipes['RecipeId'] == recipe_id].iloc[0]
-    neighbors = G.neighbors(recipe["Name"])
+    neighbors = Reviewers_Graph.neighbors(recipe["Name"])
     for neighbor in neighbors:
         fila = df_recipes.loc[df_recipes["Name"] == str(neighbor)].iloc[0]
         fila_df = fila.to_frame().T

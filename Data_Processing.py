@@ -59,7 +59,7 @@ def get_ingredients(recipe):
     ingredients = clean(ingredients)
     return ingredients
 
-def calculate_PMI_neighbors(df_recipes, recipe_id):
+def calculate_PMI_neighbors(Ingredients_Graph, df_recipes, recipe_id):
     """
     La función utiliza el grafo no dirigido que representa la relación entre los ingredientes de las recetas
     para obtener el PMI entre los ingredientes de la receta dada y sus vecinos.
@@ -74,9 +74,7 @@ def calculate_PMI_neighbors(df_recipes, recipe_id):
     - df_recipes_PMI: Un DataFrame con las 50 recetas con mayor coincidencia de ingredientes.
     - recipe_id: El ID de la receta para la que se desea calcular la similitud.
     """
-    
 
-    Ingredients_Graph = nx.read_graphml("Ingredients.graphml")
     PMI_ingredients = set()
 
     recipe = df_recipes.loc[df_recipes['RecipeId'] == recipe_id].iloc[0]
@@ -117,21 +115,12 @@ def score_recipe_ingredients(recipe_ingredients, ingredients) -> int:
             score += 1
     return int(score)
 
-def get_recipe_by_ingredients(df_recipes, ingredients):
-    ingredients = ingredients.split(",")
-    ingredients = clean(ingredients)
-    df_recipes["Match"] = df_recipes["RecipeIngredientParts"].apply(lambda x: score_recipe_ingredients(clean(x), ingredients))
-    df_recipes = df_recipes.sort_values("Match", ascending = False)
-    recipes = df_recipes[0:9]
-    return recipes
-
-def get_recipe_by_ingredients_using_graph(ingredients):
-    G = nx.read_graphml("Recipes.graphml")
+def get_recipe_by_ingredients_using_graph(Recipes_Graph, ingredients):
     ingredients = ingredients.split(",")
     ingredients = clean(ingredients)
     first_run = 1
     for ingredient in ingredients:
-        recetas = set(G.predecessors(ingredient))
+        recetas = set(Recipes_Graph.predecessors(ingredient))
         if first_run == 1:
             result = recetas
             first_run = 0

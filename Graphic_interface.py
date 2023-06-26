@@ -1,41 +1,42 @@
 import tkinter as tk
 import ttkbootstrap as ttk
-from PIL import Image, ImageTk
 import pandas as pd
+import networkx as nx
 import re
 from Data_Processing import get_recipe_id, calculate_PMI_neighbors, get_recipe_by_ingredients_using_graph
 from networkx import NetworkXError
 from Graph_Crafting import calculate_reviewers_similarity,calculate_nutritional_similarity,calculate_ingredient_similarity
 
-
-
-
 df_recipes = pd.read_parquet("cleaned_recipes.parquet")
-
+Ingredients_Graph = nx.read_graphml("Ingredients.graphml")
+Reviewers_Graph = nx.read_graphml("Reviewers.graphml")
+Recipes_Graph = nx.read_graphml("Recipes.graphml")
 #####################################################################################################################
 
-def filtro(df_recipes,recipe_name,filter_output_frame,check_box_filtro_pmi_status,check_box_filtro_nutricional_status,check_box_filtro_reviews_status):
+def filtro(df_recipes, recipe_name, filter_output_frame, check_box_filtro_pmi_status, check_box_filtro_nutricional_status, check_box_filtro_reviews_status):
+    try:
+        recipe_id = get_recipe_id(df_recipes, recipe_name)
+        print(check_box_filtro_pmi_status, check_box_filtro_nutricional_status, check_box_filtro_reviews_status)
+        if check_box_filtro_pmi_status.get() == 1:
+            df_recipes, recipe_id = calculate_PMI_neighbors(Ingredients_Graph, df_recipes, recipe_id)
+        if  check_box_filtro_reviews_status.get() == 1:
+            df_recipes, recipe_id = calculate_reviewers_similarity(Reviewers_Graph, df_recipes, recipe_id)
+        if check_box_filtro_nutricional_status.get() == 1 :
+            df_recipes,recipe_id = calculate_nutritional_similarity(df_recipes, recipe_id)
+        df_recipes, recipe_id = calculate_ingredient_similarity(Ingredients_Graph, df_recipes, recipe_id)
 
-    recipe_id=get_recipe_id(df_recipes, recipe_name)
-    print(check_box_filtro_pmi_status,check_box_filtro_nutricional_status,check_box_filtro_reviews_status)
-    if check_box_filtro_pmi_status.get()==1:
-        df_recipes, recipe_id = calculate_PMI_neighbors(df_recipes,recipe_id)
-    if  check_box_filtro_reviews_status.get()==1:
-        df_recipes, recipe_id = calculate_reviewers_similarity(df_recipes,recipe_id)
-    if check_box_filtro_nutricional_status.get()==1 :
-        df_recipes,recipe_id = calculate_nutritional_similarity(df_recipes,recipe_id)
-    df_recipes,recipe_id = calculate_ingredient_similarity(df_recipes,recipe_id)
-
-    
-    sugerencias_var=ttk.StringVar(value=df_recipes["Name"].to_list())
-    sugerencias_label=ttk.Label(filter_output_frame, text="Te podrian gustar:", font="Calibri 12").pack()
-    sugerencias_list =tk.Listbox(filter_output_frame, height = 10, width = 30, listvariable = list_of_ingredients,font="Calibri 12").pack()
-
+        sugerencias_var = ttk.StringVar(value = df_recipes["Name"].to_list())
+        sugerencias_label = ttk.Label(filter_output_frame, text = "Te podrian gustar:", font = "Calibri 12").pack()
+        sugerencias_list = tk.Listbox(filter_output_frame, height = 10, width = 30, listvariable = sugerencias_var, font = "Calibri 12").pack(side=tk.RIGHT, anchor=tk.SE)
+    except:
+        output_label = ttk.Label(filter_output_frame, text = "No se encontraron coincidencias", font = "Calibri 18 bold")
+        filter_output_frame.place(relx = 0.5, rely = 0.5, anchor = tk.CENTER, relwidth = 0.8, relheight = 0.4)
+        output_label.pack(fill = "x")
 
 ######################################################################################################################
 
 def close_current_tab():
-    current_tab=notebook.select()
+    current_tab = notebook.select()
     if current_tab:
         notebook.forget(notebook.index(current_tab))
 
@@ -46,13 +47,13 @@ def search():
     # Frame de resultados de búsqueda
     output_window = ttk.Frame(notebook)
     output_frame = ttk.Frame(output_window)
-    close_tab=ttk.Button(output_frame,text="Close",command= close_current_tab)
+    close_tab = ttk.Button(output_frame, text = "Close", command = close_current_tab)
 
     if check_box_state.get() == 1:
         try:
             notebook.add(output_window, text = "Resultados de busqueda", sticky = "nsew")
             output_label = ttk.Label(output_frame, text="Mejores coincidencias por ingredientes: ", font = "Calibri 18 bold")
-            results = get_recipe_by_ingredients_using_graph(input_recipe.get())
+            results = get_recipe_by_ingredients_using_graph(Recipes_Graph, input_recipe.get())
             list_var = ttk.StringVar(value = results)
             results_list = tk.Listbox(output_frame, height = 20, width = 70, listvariable = list_var)
             results_list.bind("<<ListboxSelect>>", my_click_on_search_results)
@@ -232,7 +233,7 @@ def add_info_tab(recipe):
    
     filter_button=ttk.Button(filter_menu_frame,
                             text="Search",
-                            command=lambda: filtro(df_recipes,name,info_tab,check_box_filtro_pmi_status,check_box_filtro_nutricional_status,check_box_filtro_reviews_status)).place(relx=0.4,rely=0.9,anchor=tk.CENTER)
+                            command = lambda: filtro(df_recipes,name,info_tab,check_box_filtro_pmi_status,check_box_filtro_nutricional_status,check_box_filtro_reviews_status)).place(relx=0.4,rely=0.9,anchor=tk.CENTER)
          
 def my_click_on_coincidences_table(my_widget):
     window = my_widget.widget

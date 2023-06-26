@@ -52,19 +52,6 @@ def get_recipe_id(df_recipes, recipe_name):
     id_receta = df_recipes.loc[df_recipes["Name"] == recipe_name, "RecipeId"].values[0]
     return id_receta
 
-def get_all_ingredients(df_recipes):
-    all_ingredients = set()
-    
-    for n, recipe in df_recipes.iterrows():
-        print(n)
-        ingredients = get_ingredients(recipe)
-        all_ingredients.update(ingredients)
-    
-    for i in all_ingredients:
-        with open("ingredients.txt", "a") as f:
-            f.write(i +"\n")
-    print(len(all_ingredients))
-
 def get_ingredients(recipe):
     ingredients = set()
     for ingredient in recipe["RecipeIngredientParts"]:

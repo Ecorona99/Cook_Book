@@ -178,7 +178,7 @@ def calculate_nutritional_similarity(df_recipes, recipe_id):
     nutritional_df.loc[:,nutritional_data_columns] = nutritional_df.loc[:,nutritional_data_columns].div(nutritional_df["RecipeServings"], axis=0)
     nutritional_df.drop("RecipeServings", axis=1)
     recommender = NutritionalRecommender(nutritional_df, nutritional_data_columns)
-    nutritional_sim_df = recommender.find_closest_recipes(recipe_id, k = 100)
+    nutritional_sim_df = recommender.find_closest_recipes(recipe_id, k = 500)
     return nutritional_sim_df, recipe_id
 
 

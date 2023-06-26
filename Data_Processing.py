@@ -110,7 +110,7 @@ def calculate_PMI_neighbors(df_recipes, recipe_id):
     
     df_recipes["Coincidences"] = df_recipes["RecipeIngredientParts"].apply(lambda x: score_recipe_ingredients(x, PMI_ingredients))
     df_recipes_PMI = df_recipes.sort_values("Coincidences", ascending = False)
-    df_recipes_PMI = df_recipes_PMI.iloc[0:49]
+    df_recipes_PMI = df_recipes_PMI.iloc[0:4999]
     return df_recipes_PMI, recipe_id
 
 def score_recipe_ingredients(recipe_ingredients, ingredients) -> int:
@@ -150,7 +150,6 @@ def get_recipe_by_ingredients_using_graph(ingredients):
             first_run = 0
         else:
             result = result & recetas
-        print(result)
     return list(result)
 
 def clean(ingredients):

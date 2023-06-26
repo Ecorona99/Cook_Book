@@ -5,31 +5,32 @@ import pandas as pd
 import re
 from Data_Processing import get_recipe_id, calculate_PMI_neighbors, get_recipe_by_ingredients_using_graph
 from networkx import NetworkXError
+from Graph_Crafting import calculate_reviewers_similarity,calculate_nutritional_similarity,calculate_ingredient_similarity
+
+
+
 
 df_recipes = pd.read_parquet("cleaned_recipes.parquet")
 
 #####################################################################################################################
 
-def filtro_PMI(df_recipes, input_recipe):
+def filtro(df_recipes,recipe_name,filter_output_frame,check_box_filtro_pmi_status,check_box_filtro_nutricional_status,check_box_filtro_reviews_status):
 
-    df_recipes, recipe = calculate_PMI_neighbors(df_recipes, get_recipe_id(df_recipes, input_recipe.get()))
-    names = df_recipes["Name"].to_list()
+    recipe_id=get_recipe_id(df_recipes, recipe_name)
+    print(check_box_filtro_pmi_status,check_box_filtro_nutricional_status,check_box_filtro_reviews_status)
+    if check_box_filtro_pmi_status.get()==1:
+        df_recipes, recipe_id = calculate_PMI_neighbors(df_recipes,recipe_id)
+    if  check_box_filtro_reviews_status.get()==1:
+        df_recipes, recipe_id = calculate_reviewers_similarity(df_recipes,recipe_id)
+    if check_box_filtro_nutricional_status.get()==1 :
+        df_recipes,recipe_id = calculate_nutritional_similarity(df_recipes,recipe_id)
+    df_recipes,recipe_id = calculate_ingredient_similarity(df_recipes,recipe_id)
 
-    output_window = ttk.Frame(notebook)
-    notebook.add(output_window, text = "Resultados de busqueda", sticky = "nsew")
+    
+    sugerencias_var=ttk.StringVar(value=df_recipes["Name"].to_list())
+    sugerencias_label=ttk.Label(filter_output_frame, text="Te podrian gustar:", font="Calibri 12").pack()
+    sugerencias_list =tk.Listbox(filter_output_frame, height = 10, width = 30, listvariable = list_of_ingredients,font="Calibri 12").pack()
 
-    output_window_height = output_window.winfo_height()
-    output_window_width = output_window.winfo_width()
-    output_frame = ttk.Frame(output_window)
-    output_label = ttk.Label(output_frame, text = "Mejores coincidencias filtro PMI: ", font = "Calibri 20 bold")
-    list_var = ttk.StringVar(value = names)
-    results_list = tk.Listbox(output_frame, height = 20, width = 70, listvariable = list_var)
-    close_tab=ttk.Button(output_frame, text = "Close",command = lambda: notebook.forget(1))
-    output_frame.place(x = output_window_width / 2, y = output_window_height / 2)
-    close_tab.pack(pady = 5, side = "bottom", expand = True)
-    output_label.pack(pady = 5, expand = True)
-    results_list.pack(pady = 5, expand = True)
-    button_status.set("Search")
 
 ######################################################################################################################
 
@@ -164,8 +165,8 @@ def my_click_on_search_results(my_widget):
 def add_info_tab(recipe):
     info_tab = ttk.Frame(notebook) 
     info_frame = ttk.Frame(info_tab)
-    filter_menu_frame=ttk.Frame(info_tab)
     filter_output_frame=ttk.Frame(info_tab)
+    filter_menu_frame=ttk.Frame(info_tab)
     close_button_frame=ttk.Frame(info_tab)
 
     name = recipe["Name"]
@@ -180,7 +181,7 @@ def add_info_tab(recipe):
     name_label = ttk.Label(info_frame, text = f"Nombre: {name}", font = "Calibri 14 bold").pack()
     ingredients = recipe["RecipeIngredientParts"]
     list_of_ingredients = ttk.StringVar(value = ingredients)
-    ingredients_label=ttk.Label(info_frame, text="Ingredientes:", font="Calibri 12")
+    ingredients_label=ttk.Label(info_frame, text="Ingredientes:", font="Calibri 12").pack()
     ingredients_list =tk.Listbox(info_frame, height = 10, width = 30, listvariable = list_of_ingredients,font="Calibri 12").pack()
     #scrollbar = ttk.Scrollbar(info_frame,orient=tk.VERTICAL, command=ingredients_list.yview)
     #scrollbar.place(x=ingredients_list.winfo_x()+ingredients_list.winfo_width()+3, y=20, height=20)
@@ -207,10 +208,9 @@ def add_info_tab(recipe):
     ### Filter menu frame ###############################################################################
     label_menu=ttk.Label(filter_menu_frame, text="Buscar recetas similares usando:", font="Calibri 14 bold").place(relx=0,rely=0.1)
 
-    check_box_filtro_pmi_status=ttk.IntVar()
-    check_box_filtro_nutricional_status=ttk.IntVar()
-    check_box_filtro_reviews_status=ttk.IntVar()
-    orden_filtros=set()
+    check_box_filtro_pmi_status=ttk.IntVar(value=0)
+    check_box_filtro_nutricional_status=ttk.IntVar(value=0)
+    check_box_filtro_reviews_status=ttk.IntVar(value=0)
 
     check_box_filtro_pmi=ttk.Checkbutton(
         filter_menu_frame,
@@ -230,7 +230,9 @@ def add_info_tab(recipe):
         note_label=ttk.Label(filter_menu_frame,text="**Filtro de reviews no disponible en recetas\ncon menos de 10 reseñas.",
                             font="Calibri 8").place(relx=0,rely=0.5)
    
-    filter_button=ttk.Button(filter_menu_frame,text="Search").place(relx=0.4,rely=0.9,anchor=tk.CENTER)
+    filter_button=ttk.Button(filter_menu_frame,
+                            text="Search",
+                            command=lambda: filtro(df_recipes,name,info_tab,check_box_filtro_pmi_status,check_box_filtro_nutricional_status,check_box_filtro_reviews_status)).place(relx=0.4,rely=0.9,anchor=tk.CENTER)
          
 def my_click_on_coincidences_table(my_widget):
     window = my_widget.widget

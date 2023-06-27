@@ -18,7 +18,7 @@ Para utilizar este motor de búsqueda de recetas de cocina, sigue estos pasos:
 1. Clona este repositorio en tu equipo local.
 2. Instala las dependencias necesarias con `pip install -r requirements.txt`.
 3. Descarga los grafos y set de datos necesarios desde el siguiente [enlace](https://drive.google.com/drive/folders/1f1GW7iOp6a8Qsln7GsAvBhrKEWuW81NC?usp=sharing).
-4. Ejecuta el archivo `main.py` para iniciar la aplicación.
+4. Ejecuta el archivo `Grraphic_interface.py` para iniciar la aplicación.
 5. En la aplicación, introduce el nombre de la receta o los ingredientes que quieras buscar.
 6. La aplicación mostrará la información de la receta o una lista de coincidencias para ingredientes buscados.
 
@@ -32,4 +32,4 @@ Si quieres contribuir a este proyecto, puedes hacerlo de las siguientes maneras:
 
 ## Licencia
 
-Este proyecto está licenciado bajo la Licencia MIT. Puedes ver el archivo LICENSE.md para más información.
+Este proyecto está licenciado bajo la Licencia MIT. Puedes ver el archivo LICENSE para más información.

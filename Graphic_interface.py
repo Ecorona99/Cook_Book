@@ -11,7 +11,9 @@ df_recipes = pd.read_parquet("cleaned_recipes.parquet")
 Ingredients_Graph = nx.read_graphml("Ingredients.graphml")
 Reviewers_Graph = nx.read_graphml("Reviewers.graphml")
 Recipes_Graph = nx.read_graphml("Recipes.graphml")
-#####################################################################################################################
+
+
+# Función de filtrado en base a los checkboxes de cada filtro. Muestreo de recetas similares.
 
 def filtro(df_recipes, recipe_name, filter_output_frame, check_box_filtro_pmi_status, check_box_filtro_nutricional_status, check_box_filtro_reviews_status):
     try:
@@ -33,12 +35,16 @@ def filtro(df_recipes, recipe_name, filter_output_frame, check_box_filtro_pmi_st
         filter_output_frame.place(relx = 0.5, rely = 0.5, anchor = tk.CENTER, relwidth = 0.8, relheight = 0.4)
         output_label.pack(fill = "x")
 
-######################################################################################################################
+
+# Función para botón de cerrar pestaña.
 
 def close_current_tab():
     current_tab = notebook.select()
     if current_tab:
         notebook.forget(notebook.index(current_tab))
+
+
+# Función encargada de búsqueda basado en checkbox de criterio.
 
 def search():
     button_status.set("Searching...")
@@ -75,7 +81,8 @@ def search():
     button_status.set("Search")
     window.update()
 
-##########################################################################################################
+
+# Checkbox para establecer criterio de búsqueda.
 
 def check_box_toggle():
     if check_box_state.get() == 1:
@@ -85,9 +92,10 @@ def check_box_toggle():
         input_label_text.set("Buscar receta por nombre:")
         coincidences_frame.pack(pady = 10, side = "bottom")
        
-##################################################################################################################### 
-        
+
+
 # Main window
+
 window = tk.Tk()
 window.title("Cook-book V1.0")
 window.geometry("800x600")
@@ -100,14 +108,6 @@ notebook.add(main_tab, text = "Buscar")
 window_height = window.winfo_height()
 window_width = window.winfo_width()
 
-"""
-# Background
-photo = Image.open("sources/background.jpg")
-backgroung_image = ImageTk.PhotoImage(photo)
-background_label = ttk.Label(window, image = backgroung_image)
-background_label.place(x = 0, y = 0)
-background_label.lower()
-"""
 
 # Input Frame
 input_frame = ttk.Frame(main_tab)
@@ -143,6 +143,7 @@ list = tk.Listbox(coincidences_frame, height = 15, width = 50 , font = "Calibri 
                   bg = "SystemButtonFace" , highlightcolor = "SystemButtonFace")
 
 
+# Selección de una de las coincidencias de recetas por ingredientes con un click para mostrar su información.
 
 def my_click_on_search_results(my_widget):
     window = my_widget.widget
@@ -152,6 +153,8 @@ def my_click_on_search_results(my_widget):
     add_info_tab(recipe)
 
 
+# Muestreo de la información de la receta seleccionada.
+
 def add_info_tab(recipe):
     info_tab = ttk.Frame(notebook) 
     info_frame = ttk.Frame(info_tab)
@@ -160,6 +163,7 @@ def add_info_tab(recipe):
     close_button_frame=ttk.Frame(info_tab)
 
     name = recipe["Name"]
+    
     ### Info frame ##############################################
     notebook.add(info_tab, text=name)
     info_frame.place(x=0, y=0, relwidth=0.6, relheight=0.9)
@@ -175,9 +179,7 @@ def add_info_tab(recipe):
     list_of_ingredients = ttk.StringVar(value = ingredients_str)
     ingredients_label=ttk.Label(info_frame, text="Ingredientes:", font="Calibri 12").pack()
     ingredients_list =tk.Listbox(info_frame, height = 10, width = 30, listvariable = list_of_ingredients, font="Calibri 12").pack()
-    #scrollbar = ttk.Scrollbar(info_frame,orient=tk.VERTICAL, command=ingredients_list.yview)
-    #scrollbar.place(x=ingredients_list.winfo_x()+ingredients_list.winfo_width()+3, y=20, height=20)
-    #ingredients_list.unbind("<<ListboxSelect>>",my_click_on_search_results)
+    
     time = recipe["TotalTime"]
     time_label = ttk.Label(info_frame, text = f"Tiempo de cocina: {time}", font = "Calibri 12").pack()
     rating = recipe["AggregatedRating"]
@@ -197,7 +199,7 @@ def add_info_tab(recipe):
     servings = recipe["RecipeServings"]
     servings_label = ttk.Label(info_frame, text = f"Servicios: {servings}", font = "Calibri 12").pack()
 
-    ### Filter menu frame ###############################################################################
+    # Filter menu frame 
     label_menu=ttk.Label(filter_menu_frame, text="Buscar recetas similares usando:", font="Calibri 14 bold").place(relx=0,rely=0.1)
 
     check_box_filtro_pmi_status=ttk.IntVar(value=0)
@@ -225,7 +227,10 @@ def add_info_tab(recipe):
     filter_button=ttk.Button(filter_menu_frame,
                             text="Search",
                             command = lambda: filtro(df_recipes,name,filter_output_frame,check_box_filtro_pmi_status,check_box_filtro_nutricional_status,check_box_filtro_reviews_status)).place(relx=0.4,rely=0.9,anchor=tk.CENTER)
-         
+
+
+# Función para seleccionar una coincidencia del autocompletado e insertarla en el cuadro de búsqueda.
+
 def my_click_on_coincidences_table(my_widget):
     window = my_widget.widget
     index = int(window.curselection()[0])
@@ -234,12 +239,15 @@ def my_click_on_coincidences_table(my_widget):
     list.delete(0, tk.END)
     coincidences_frame.pack_forget()
 
+
+# Función que maneja la entrada de teclado y compara para proporcionar opciones de autocompletado.
+
 def get_data(*args):
     if check_box_state.get() != 1:
         coincidences_frame.pack(pady = 10, side = "bottom")
         list.pack(pady = 5)
 
-        search_str = search_field.get() # user entered string
+        search_str = search_field.get()
         list.delete(0, tk.END)
         names = df_recipes["Name"].to_list()
         for name in names:
@@ -247,7 +255,8 @@ def get_data(*args):
                 list.insert(tk.END, name)
 
 
-# Seguimiento de la entrada por el usuario
+# Seguimiento de la entrada por el usuario.
+
 input_recipe.trace("w", get_data)
 list.bind("<<ListboxSelect>>", my_click_on_coincidences_table)
 
